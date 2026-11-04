@@ -541,3 +541,12 @@ http-client.private.env.json
 # Apifox Helper cache
 .idea/.cache/.Apifox_Helper
 .idea/ApifoxUploaderProjectSetting.xml
+
+# Generated build, dependency, and IDE folders
+**/.git/
+**/.vs/
+**/.code/
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/

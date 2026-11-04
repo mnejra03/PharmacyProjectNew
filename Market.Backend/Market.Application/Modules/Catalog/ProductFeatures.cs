@@ -1,10 +1,11 @@
-namespace Market.Application.Modules.Catalog;
+﻿namespace Market.Application.Modules.Catalog;
 
 public sealed record ProductDto(int Id, string Name, string Description, decimal Price, decimal CurrentPrice, int QuantityInStock, string ImageUrl, int CategoryId, string CategoryName, int? BrandId, string? BrandName, bool IsDiscounted, decimal? DiscountPercentage, DateTime? ExpiryDate, double AverageRating, int ReviewCount);
 public sealed record ProductListQuery(string? Search, int? CategoryId, int? BrandId, bool? Discounted, int Page = 1, int PageSize = 12) : IRequest<PageResult<ProductDto>>;
 public sealed record ProductByIdQuery(int Id) : IRequest<ProductDto>;
 public sealed record SaveProductCommand(int? Id, string Name, string Description, decimal Price, int QuantityInStock, string ImageUrl, int CategoryId, int? BrandId, bool IsDiscounted, decimal? DiscountPercentage, DateTime? ExpiryDate) : IRequest<ProductDto>;
 public sealed record DeleteProductCommand(int Id) : IRequest;
+public sealed class DeleteProductValidator : AbstractValidator<DeleteProductCommand> { public DeleteProductValidator() => RuleFor(x => x.Id).GreaterThan(0); }
 
 public sealed class SaveProductValidator : AbstractValidator<SaveProductCommand>
 {

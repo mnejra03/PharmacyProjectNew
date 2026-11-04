@@ -1,4 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
+import { FormControl, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Product, StoreApiService } from '../../../api-services/store/store-api.service';
 import { NotificationsApiService } from '../../../api-services/notifications/notifications-api.service';
@@ -17,7 +18,7 @@ export class PublicLayoutComponent implements OnInit {
   private readonly router = inject(Router);
 
   readonly currentYear = new Date().getFullYear();
-  searchQuery = '';
+  readonly searchControl = new FormControl('', { nonNullable: true, validators: [Validators.maxLength(100)] });
   searchResults: Product[] = [];
   cartCount = 0;
   readonly unreadCount$ = this.notifications.unreadCount$;
@@ -34,7 +35,7 @@ export class PublicLayoutComponent implements OnInit {
   }
 
   onSearch(): void {
-    const query = this.searchQuery.trim();
+    const query = this.searchControl.value.trim();
     if (!query) {
       this.searchResults = [];
       return;
@@ -47,7 +48,7 @@ export class PublicLayoutComponent implements OnInit {
 
   goToProduct(productId: number): void {
     void this.router.navigate(['/product', productId]);
-    this.searchQuery = '';
+    this.searchControl.setValue('');
     this.searchResults = [];
   }
 }

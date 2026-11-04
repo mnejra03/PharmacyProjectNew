@@ -86,17 +86,17 @@ export class FitConfirmDialogComponent {
   }
 
   getButtonLabel(button: any): string {
-    // Ako ima custom label, koristi ga
+    // Use the custom label when provided.
     if (button.label) {
       return button.label;
     }
 
-    // Ako ima translation key, koristi ga
+    // Use the translation key when provided.
     if (button.translationKey) {
       return this.translate.instant(button.translationKey);
     }
 
-    // Inače koristi default translation
+    // Otherwise use the default translation.
     return this.translate.instant(`DIALOGS.BUTTONS.${button.type.toUpperCase()}`);
   }
 

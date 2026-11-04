@@ -1,19 +1,36 @@
-# Pharmacy
+﻿# PharmacyProjectNew
 
-Web aplikacija za apoteku. Backend je ASP.NET Core 8 organizovan kroz Clean Architecture i CQRS, sa JWT autentifikacijom i FluentValidation validacijom. Frontend je Angular 21 aplikacija sa modulima, lazy loadingom i Reactive Forms.
+Web aplikacija za apoteku sastavljena od ASP.NET Core 8 backenda i Angular 21 frontenda. Backend koristi Clean Architecture, CQRS, JWT autentifikaciju i FluentValidation. Frontend koristi Angular Reactive Forms i validatore.
 
-Uputstvo ispod opisuje pokretanje projekta nakon kloniranja repozitorija na Windowsu.
+Ovaj README opisuje kloniranje, lokalno podešavanje baze i pokretanje aplikacije na Windowsu.
 
 ## Sadržaj
 
+- [Struktura projekta](#struktura-projekta)
 - [Preduslovi](#preduslovi)
 - [Kloniranje](#kloniranje)
-- [Podešavanje baze i lokalnih tajni](#podešavanje-baze-i-lokalnih-tajni)
+- [Baza podataka i backup](#baza-podataka-i-backup)
+- [Lokalna konfiguracija i tajne](#lokalna-konfiguracija-i-tajne)
 - [Pokretanje backenda](#pokretanje-backenda)
 - [Pokretanje frontenda](#pokretanje-frontenda)
 - [Demo nalozi i početni podaci](#demo-nalozi-i-početni-podaci)
+- [Validacija](#validacija)
+- [Dijagrami](#dijagrami)
 - [Blob slike i Stripe testno plaćanje](#blob-slike-i-stripe-testno-plaćanje)
 - [Problemi pri pokretanju](#problemi-pri-pokretanju)
+- [Funkcionalnosti](#funkcionalnosti)
+
+## Struktura projekta
+
+```text
+PharmacyProjectNew/
+├── Market.Backend/       # ASP.NET Core API, Application, Domain, Infrastructure, tests
+├── Market.Frontend/      # Angular aplikacija
+├── db-backups/           # SQL Server .bak backup baze
+├── dokumenti/            # Mermaid dijagrami sistema i poslovnih flowova
+├── MIGRATION_MAP.md
+└── README.md
+```
 
 ## Preduslovi
 
@@ -26,29 +43,38 @@ Uputstvo ispod opisuje pokretanje projekta nakon kloniranja repozitorija na Wind
 ## Kloniranje
 
 ```powershell
-git clone --branch pharmacy-migration-rs1-2025-26 https://github.com/mnejra03/pharmacy-project.git
-cd pharmacy-project
+git clone https://github.com/mnejra03/PharmacyProjectNew.git
+cd PharmacyProjectNew
 ```
 
-Ako si već klonirala repozitorij, prebaci se na granu projekta i preuzmi posljednje izmjene:
+Glavna grana repozitorija je `main`.
 
-```powershell
-git switch pharmacy-migration-rs1-2025-26
-git pull
-```
+## Baza podataka i backup
 
-## Podešavanje baze i lokalnih tajni
+U repozitoriju se nalazi SQL Server backup [db-backups/MarketaV10.bak](db-backups/MarketaV10.bak). Backup je napravljen s `COPY_ONLY` i kompresijom, a provjeren je SQL Server komandom `RESTORE VERIFYONLY`.
 
-Backend koristi SQL Server i automatski primjenjuje EF Core migracije pri pokretanju u Development okruženju. Prije pokretanja API-ja pokreni SQL Server i napravi lokalni konfiguracijski fajl:
+Backup možeš vratiti u SQL Server Management Studio (SSMS):
+
+1. Pokreni SQL Server i poveži se na svoju instancu.
+2. Desni klik na **Databases** → **Restore Database...**.
+3. Kao izvor odaberi **Device**, klikni `...`, zatim **Add** i izaberi `db-backups/MarketaV10.bak`.
+4. Kao odredišnu bazu postavi `MarketaV10` i pokreni restore.
+5. U lokalnoj konfiguraciji podesi connection string prema toj instanci.
+
+Ako želiš praznu razvojnu bazu, možeš preskočiti restore. Backend u `Development` okruženju automatski primjenjuje EF Core migracije i dodaje demo podatke pri pokretanju.
+
+## Lokalna konfiguracija i tajne
+
+Prije pokretanja API-ja napravi lokalni konfiguracijski fajl:
 
 `Market.Backend/Market.API/appsettings.Local.json`
 
-Fajl je ignorisan u Gitu. Unesi konekciju koja odgovara tvojoj SQL Server instanci. Primjer za SQL Server Express uz Windows autentifikaciju:
+Fajl je ignorisan u Gitu. Unesi connection string koji odgovara tvojoj SQL Server instanci. Primjer za SQL Server Express uz Windows autentifikaciju:
 
 ```json
 {
   "ConnectionStrings": {
-    "Main": "Server=localhost\\SQLEXPRESS;Database=PharmacyDevelopment;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;Encrypt=False"
+    "Main": "Server=localhost\\SQLEXPRESS;Database=MarketaV10;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;Encrypt=False"
   },
   "Jwt": {
     "Key": "lokalni-razvojni-kljuc-duzi-od-32-znaka"
@@ -62,7 +88,7 @@ Nemoj commitati `appsettings.Local.json`, lozinke, JWT ključeve, Stripe tajne i
 
 ## Pokretanje backenda
 
-U prvom PowerShell prozoru, iz glavnog direktorija repozitorija:
+Iz glavnog direktorija repozitorija, u prvom PowerShell prozoru:
 
 ```powershell
 dotnet restore .\Market.Backend\Market.Backend.sln
@@ -76,7 +102,7 @@ API i Swagger:
 - Swagger: `https://localhost:7260/swagger`
 - HTTP API: `http://localhost:5177`
 
-Pri prvom pokretanju backend primijeni migracije i u Development okruženju doda početne demo podatke. SQL Server mora biti dostupan; baza se kreira kroz migracije.
+SQL Server mora biti pokrenut i dostupan. Pri prvom pokretanju na praznoj bazi backend u `Development` okruženju primjenjuje migracije i dodaje početne demo podatke.
 
 ## Pokretanje frontenda
 
@@ -88,18 +114,17 @@ npm ci
 npm start
 ```
 
-Otvori `http://localhost:4200`. Frontend razvojna konfiguracija već poziva API na `https://localhost:7260`; backend zato treba pokrenuti prije korištenja aplikacije.
+Otvori `http://localhost:4200`. Frontend razvojna konfiguracija poziva API na `https://localhost:7260`, zato backend treba biti pokrenut prije korištenja aplikacije.
 
-Korisne komande iz frontend direktorija:
+Za produkcijski build:
 
 ```powershell
 npm run build
-npm test
 ```
 
 ## Demo nalozi i početni podaci
 
-U svježoj Development bazi seju se demo korisnici, katalog, oglasi i primjeri narudžbi:
+Na svježoj razvojnoj bazi seju se demo korisnici, katalog, oglasi i primjeri narudžbi:
 
 | Uloga | Email | Lozinka |
 |---|---|---|
@@ -107,17 +132,32 @@ U svježoj Development bazi seju se demo korisnici, katalog, oglasi i primjeri n
 | Farmaceut | `pharmacist@pharmacy.local` | `Pharmacist123!` |
 | Korisnik | `customer@pharmacy.local` | `Customer123!` |
 
-Seeder dopunjava nedostajuće demo podatke; postojeće podatke u bazi ne briše. Demo nalozi i lozinke služe samo za lokalni razvoj i ne smiju se koristiti u produkciji.
-Na svježoj Development bazi dodaje se i primjer zahtjeva za dopunu zaliha na čekanju, vidljiv farmaceutu i administratoru.
+Seeder dopunjava nedostajuće demo podatke; postojeće podatke u bazi ne briše. Demo nalozi i lozinke služe samo za lokalni razvoj i ne smiju se koristiti u produkciji. Na svježoj razvojnoj bazi dodaje se i primjer zahtjeva za dopunu zaliha na čekanju, vidljiv farmaceutu i administratoru.
+
+## Validacija
+
+- Backend komande i upiti validiraju se FluentValidation klasama kroz MediatR validation pipeline.
+- Angular forme koriste Reactive Forms i `Validators` za provjeru unosa u pregledniku.
+- Validacija na frontendu ne zamjenjuje backend validaciju; API ponovo provjerava podatke prije obrade.
+
+## Dijagrami
+
+Mermaid izvorne datoteke nalaze se u folderu `dokumenti/`:
+
+- [Arhitektura sistema](dokumenti/system-architecture.mmd)
+- [Flow kupovine i plaćanja](dokumenti/purchase-flow.mmd)
+- [Flow autentifikacije i osvježavanja tokena](dokumenti/authentication-flow.mmd)
+
+`.mmd` dijagrame možeš pregledati u editoru koji podržava Mermaid ili kopirati njihov sadržaj u Mermaid Live Editor.
 
 ## Blob slike i Stripe testno plaćanje
 
 Azure Blob Storage i Stripe nisu potrebni za osnovno pokretanje aplikacije.
 
-- Bez `ConnectionStrings:AzureBlobStorage`, uploadi se čuvaju u lokalnom storageu backenda. Za korištenje postojećih slika s Bloba dodaj Storage connection string u `appsettings.Local.json`.
-- Za kartično plaćanje dodaj Stripe testni secret key pod `Stripe:SecretKey`. Koristi Stripe testne ključeve i testne kartice; ključeve ne stavljaj u Git.
+- Bez `ConnectionStrings:AzureBlobStorage`, uploadi se čuvaju u lokalnom storageu backenda. Za korištenje Azure Blob Storagea dodaj storage connection string u `appsettings.Local.json`.
+- Za kartično plaćanje podesi i `Stripe:SecretKey` i `Stripe:PublishableKey` Stripe testnog okruženja. Koristi testne kartice i nikada ne stavljaj ključeve u Git.
 
-Primjer dodatnih lokalnih postavki (dodaj ih u isti JSON objekat iznad):
+Primjer dodatnih lokalnih postavki (spoji ih u postojeći JSON objekat):
 
 ```json
 {
@@ -131,28 +171,28 @@ Primjer dodatnih lokalnih postavki (dodaj ih u isti JSON objekat iznad):
 }
 ```
 
-U stvarnom fajlu spoji ove vrijednosti u postojeće `ConnectionStrings` i `Stripe` sekcije, tako da se svaki JSON ključ pojavljuje samo jednom.
+U stvarnom fajlu spoji vrijednosti u postojeće `ConnectionStrings` i `Stripe` sekcije tako da se svaki JSON ključ pojavljuje samo jednom.
 
 ## Problemi pri pokretanju
 
-- **API ne može otvoriti bazu:** provjeri je li SQL Server pokrenut i da li `ConnectionStrings:Main` odgovara njegovom serveru, autentifikaciji i portu.
-- **Login vraća 401:** provjeri da API koristi `Development`, da je migracija/seeding završio bez greške i da koristiš jedan od demo naloga iz tabele.
+- **API ne može otvoriti bazu:** provjeri je li SQL Server pokrenut i da li `ConnectionStrings:Main` odgovara instanci, autentifikaciji i portu.
+- **Login vraća 401:** provjeri da API koristi `Development`, da su migracije i seeding završili bez greške i da koristiš demo nalog iz tabele.
 - **Swagger ne učitava definiciju:** pogledaj grešku API-ja u terminalu i provjeri `https://localhost:7260/swagger/v1/swagger.json`.
 - **Frontend ne može pozvati API:** pokreni backend, koristi `https://localhost:7260` i prihvati lokalni HTTPS certifikat. Provjeri `src/environments/environment.ts` ako si promijenila port.
-- **Nema slika s Bloba:** provjeri Azure Storage connection string i postoje li kontejneri/objekti koji se koriste u URL-ovima podataka.
-- **Plaćanje ne radi:** dodaj važeći Stripe testni secret key i koristi testnu karticu iz Stripe dokumentacije.
+- **Nema slika s Bloba:** provjeri Azure Storage connection string i postoje li objekti na URL-ovima koje koristi baza.
+- **Plaćanje ne radi:** provjeri da su oba Stripe test ključa podešena i koristi testnu karticu.
 
 ## Funkcionalnosti
 
-Katalog proizvoda i brendova, kategorije, korpa sa spremanjem za kasnije, narudžbe i checkout, favoriti, ocjene i recenzije, recepti, obavijesti, chat, korisnički profili, admin upravljanje korisnicima/proizvodima/narudžbama/oglasima, direktno zaprimanje zaliha i zahtjevi farmaceuta za nabavku koje administrator odobrava ili odbija, slike i Stripe testno plaćanje.
+Aplikacija obuhvata katalog s kategorijama i filterima, korpu sa spremanjem artikala za kasnije, checkout i Stripe testno plaćanje, favorite, ocjene i recenzije, recepte, obavijesti, chat, korisničke profile i administratorsko upravljanje korisnicima, proizvodima, narudžbama i oglasima. Podržani su upload slika i zahtjevi farmaceuta za nabavku koje administrator može odobriti ili odbiti.
 
-Mapa prenesenih funkcionalnosti, poznatih ograničenja i odluke o zadržavanju kataloga nalazi se u [MIGRATION_MAP.md](MIGRATION_MAP.md).
+Mapa prenesenih funkcionalnosti, poznatih ograničenja i odluka o zadržavanju kataloga nalazi se u [MIGRATION_MAP.md](MIGRATION_MAP.md).
 
 ## Reset lozinke i email
 
-Forma **Zaboravljena lozinka** ne otkriva da li korisnicki email postoji. Reset token je jednokratan i vrijedi 30 minuta; nakon uspjesnog resetovanja opozivaju se aktivne refresh sesije.
+Forma **Zaboravljena lozinka** ne otkriva da li korisnički email postoji. Reset token je jednokratan i vrijedi 30 minuta; nakon uspješnog resetovanja opozivaju se aktivne refresh sesije.
 
-Za slanje emaila podesi SMTP u `Market.Backend/Market.API/appsettings.Local.json` ili kroz sigurne varijable okruzenja:
+Za slanje emaila podesi SMTP u `Market.Backend/Market.API/appsettings.Local.json` ili kroz sigurne varijable okruženja:
 
 ```json
 {
@@ -168,4 +208,4 @@ Za slanje emaila podesi SMTP u `Market.Backend/Market.API/appsettings.Local.json
 }
 ```
 
-U `Development` okruzenju, ako SMTP nije podesen, API ispisuje reset link u terminalu. U produkciji SMTP mora biti konfigurisan za isporuku emaila. Ne commitaj SMTP lozinku ni druge tajne.
+U `Development` okruženju, ako SMTP nije podešen, API ispisuje reset link u terminalu. U produkciji SMTP mora biti konfigurisan za isporuku emaila. Nemoj commitati SMTP lozinku ni druge tajne.

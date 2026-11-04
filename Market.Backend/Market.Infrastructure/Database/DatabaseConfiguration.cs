@@ -44,7 +44,7 @@ public partial class DatabaseContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // učitaj sve konfiguracije iz Infrastructure.Database.Configurations
+        // load all configurations from Infrastructure.Database.Configurations
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(DatabaseContext).Assembly);
 
         ApplyGlobalFielters(modelBuilder);

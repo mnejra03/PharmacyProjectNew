@@ -1,0 +1,17 @@
+﻿sequenceDiagram
+  actor User
+  participant UI as Angular frontend
+  participant API as ASP.NET Core API
+  participant Auth as Authentication services
+  participant DB as SQL Server
+  User->>UI: Submit credentials
+  UI->>API: Login request
+  API->>Auth: Validate credentials
+  Auth->>DB: Read user and refresh token data
+  Auth-->>API: Access token and refresh token
+  API-->>UI: Return tokens
+  UI->>API: Authenticated API request
+  UI->>API: Refresh request when access token expires
+  API->>Auth: Validate and rotate refresh token
+  Auth->>DB: Persist rotated token
+  API-->>UI: Return refreshed tokens

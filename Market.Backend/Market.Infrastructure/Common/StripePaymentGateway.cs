@@ -23,7 +23,7 @@ public sealed class StripePaymentGateway(HttpClient http, IConfiguration configu
         {
             ["amount"] = amountMinor.ToString(System.Globalization.CultureInfo.InvariantCulture),
             ["currency"] = currency.ToLowerInvariant(),
-            ["payment_method_types[0]"] = "card",
+            ["automatic_payment_methods[enabled]"] = "true",
             ["metadata[userId]"] = userId
         });
         using var response = await http.SendAsync(request, ct);

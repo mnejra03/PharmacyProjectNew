@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { FormBuilder } from '@angular/forms';
+import { FormBuilder, Validators } from '@angular/forms';
 import { UsersApiService, UserProfile } from '../../../api-services/users/users-api.service';
 
 @Component({
@@ -28,7 +28,7 @@ import { UsersApiService, UserProfile } from '../../../api-services/users/users-
 })
 export class UsersComponent implements OnInit {
   private fb = inject(FormBuilder); private api = inject(UsersApiService);
-  filters = this.fb.group({ search: [''], role: [''] }); editForm=this.fb.group({firstName:[''],lastName:[''],phoneNumber:[''],role:['customer']}); items: UserProfile[] = []; selected?:UserProfile;
+  filters = this.fb.group({ search: ['', [Validators.maxLength(200)]], role: ['', [Validators.maxLength(30)]] }); editForm=this.fb.group({firstName:['',[Validators.required,Validators.maxLength(100)]],lastName:['',[Validators.required,Validators.maxLength(100)]],phoneNumber:['',[Validators.maxLength(30)]],role:['customer',[Validators.required,Validators.pattern(/^(admin|pharmacist|customer)$/)]]}); items: UserProfile[] = []; selected?:UserProfile;
   columns = ['name', 'email', 'role','actions']; page = 1; pageSize = 20; totalItems = 0; totalPages = 1; loading=false; errorMessage='';
   ngOnInit(): void {
     this.load();
@@ -44,6 +44,7 @@ export class UsersComponent implements OnInit {
   }
   save():void {
     if(!this.selected)return;
+    if(this.editForm.invalid){this.editForm.markAllAsTouched();return;}
     const v=this.editForm.value;
     const role=v.role;
     this.api.updateUser(this.selected.id,{

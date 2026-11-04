@@ -1,4 +1,4 @@
-﻿using Market.API;
+using Market.API;
 using Market.API.Middleware;
 using Market.Application;
 using Market.Infrastructure;
@@ -71,7 +71,7 @@ public partial class Program
                     policy =>
                     {
                         policy
-                            .WithOrigins("http://localhost:4200") // kao string array može i više URL-ova
+                            .WithOrigins("http://localhost:4200") // additional origins can be added here
                             .AllowAnyHeader()
                             .AllowAnyMethod()
                             .AllowCredentials();
@@ -95,7 +95,7 @@ public partial class Program
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-            // UseCors ide prije UseAuthorization i UseAuthentification
+            // UseCors must run before authentication and authorization.
             app.UseCors("AllowAngularDev");
 
             app.UseAuthentication();
@@ -112,8 +112,8 @@ public partial class Program
         }
         catch (HostAbortedException)
         {
-            // EF Core tools abortiraju host nakon što uzmu DbContext.
-            // Ovo nije runtime greška – samo tiho izađi.
+            // EF Core tools stop the host after resolving the DbContext.
+            // This is not a runtime error; exit quietly.
             Log.Information("Host aborted by EF Core tooling (design-time) - its ok.");
         }
         catch (Exception ex)

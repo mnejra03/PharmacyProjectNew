@@ -11,8 +11,8 @@ import { ChatRealtimeService } from '../../../core/services/chat-realtime.servic
     <a mat-button routerLink="/client/wishlist">Favoriti</a>
     <a mat-button routerLink="/client/orders">Narudžbe</a>
     <a mat-button routerLink="/client/profile">Profil</a>
-    <a mat-button routerLink="/client/recipes">Recepti</a>
-    <a mat-button *ngIf="auth.isPharmacist() || auth.isAdmin()" routerLink="/client/pharmacist/recipes">Pregled recepata</a>
+    <a mat-button *ngIf="!auth.isPharmacist() && !auth.isAdmin()" routerLink="/client/recipes">Moji recepti</a>
+    <a mat-button *ngIf="auth.isPharmacist() || auth.isAdmin()" routerLink="/client/pharmacist/recipes">Recepti za pregled</a>
     <a mat-button *ngIf="auth.isPharmacist()" routerLink="/client/supply-orders">Nabavka i zalihe</a>
     <a mat-button routerLink="/client/chat">Razgovor</a>
     <a mat-button routerLink="/client/notifications">Obavijesti</a>

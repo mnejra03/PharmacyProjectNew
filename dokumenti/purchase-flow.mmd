@@ -1,0 +1,8 @@
+﻿flowchart TD
+  A[Customer browses product catalog] --> B[Add items to cart]
+  B --> C[Create Stripe PaymentIntent when card payment is selected]
+  C --> D[Customer confirms payment with a Stripe test card]
+  D --> E[Frontend submits checkout]
+  E --> F[Backend verifies payment and creates order]
+  F --> G[(SQL Server stores order)]
+  F --> H[Application sends order status notifications]

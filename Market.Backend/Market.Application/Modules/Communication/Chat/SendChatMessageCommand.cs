@@ -1,4 +1,4 @@
-namespace Market.Application.Modules.Communication.Chat;
+﻿namespace Market.Application.Modules.Communication.Chat;
 using Market.Application.Modules.Communication.Notifications;
 public sealed class SendChatMessageCommand : IRequest<ChatMessageDto>
 { public int ReceiverId { get; init; } public string Message { get; init; } = string.Empty; }
@@ -17,25 +17,22 @@ public sealed class SendChatMessageHandler(IAppDbContext db, IAppCurrentUser use
         var item = new ChatMessageEntity { SenderId = sender.Id, ReceiverId = receiver.Id, Message = request.Message.Trim(), Type = user.IsPharmacist ? "response" : "question", Status = "new", IsResponse = user.IsPharmacist, SentAtUtc = sentAt };
         db.ChatMessages.Add(item);
 
-        var notifications = new List<NotificationEntity>();
-        if (user.IsCustomer)
+        var notification = new NotificationEntity
         {
-            var pharmacists = await db.Users.Where(x => x.IsPharmacist && x.IsEnabled).ToListAsync(ct);
-            foreach (var pharmacist in pharmacists)
-            {
-                var notification = new NotificationEntity { UserId = pharmacist.Id, SenderId = sender.Id, Title = "Nova poruka od korisnika", Message = $"Nova poruka od korisnika {sender.FirstName} {sender.LastName}: {item.Message}", Type = "new_message", CreatedAt = sentAt };
-                db.Notifications.Add(notification); notifications.Add(notification);
-            }
-        }
+            UserId = receiver.Id,
+            SenderId = sender.Id,
+            Title = user.IsCustomer ? "Nova poruka od kupca" : "Nova poruka od farmaceuta",
+            Message = $"Nova poruka od {sender.FirstName} {sender.LastName}: {item.Message}",
+            Type = "new_message",
+            CreatedAt = sentAt
+        };
+        db.Notifications.Add(notification);
         await db.SaveChangesAsync(ct);
 
         var messageDto = new ChatMessageDto(item.Id, item.SenderId, item.ReceiverId, item.Message, item.Type, item.Status, item.IsResponse, item.SentAtUtc);
         await notifier.SendMessageAsync(receiver.Id, messageDto, ct);
-        foreach (var notification in notifications)
-        {
-            var dto = new NotificationDto(notification.Id, notification.Title, notification.Message, notification.CreatedAt, notification.IsRead, notification.Type, notification.SenderId);
-            await notifier.SendNotificationAsync(notification.UserId, dto, ct);
-        }
+        await notifier.SendNotificationAsync(receiver.Id,
+            new NotificationDto(notification.Id, notification.Title, notification.Message, notification.CreatedAt, notification.IsRead, notification.Type, notification.SenderId), ct);
         return messageDto;
     }
 }

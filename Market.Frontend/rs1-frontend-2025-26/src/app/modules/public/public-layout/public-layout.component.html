@@ -1,4 +1,4 @@
-<header class="header">
+﻿<header class="header">
   <div class="search-bar">
     <div class="logo">
       <a routerLink="/" aria-label="Apoteka - početna stranica">
@@ -9,7 +9,7 @@
     <div class="search">
       <input
         type="search"
-        [(ngModel)]="searchQuery"
+        [formControl]="searchControl"
         (input)="onSearch()"
         placeholder="Pretraži proizvode"
         aria-label="Pretraži proizvode"

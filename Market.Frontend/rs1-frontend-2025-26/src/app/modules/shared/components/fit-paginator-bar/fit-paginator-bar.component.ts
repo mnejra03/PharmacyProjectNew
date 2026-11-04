@@ -8,6 +8,6 @@ import {BaseListPagedComponent} from '../../../../core/components/base-classes/b
   styleUrl: './fit-paginator-bar.component.scss',
 })
 export class FitPaginatorBarComponent {
-  // ViewModel je bilo koja komponenta koja nasljeđuje BaseListPagedComponent
+  // The view model can be any component that extends BaseListPagedComponent
   @Input({ required: true }) vm!: BaseListPagedComponent<any, any>;
 }

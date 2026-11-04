@@ -1,0 +1,10 @@
+﻿flowchart LR
+  FE[Angular frontend] --> API[ASP.NET Core API]
+  API --> C[API controllers]
+  C --> APP[Application: MediatR handlers and FluentValidation]
+  APP --> INF[Infrastructure services]
+  INF --> DB[(SQL Server database)]
+  INF --> STRIPE[Stripe test API]
+  INF --> FILES[Configured file storage]
+  API --> HUBS[SignalR chat hub]
+  HUBS --> FE

@@ -1,4 +1,5 @@
-import { Component, OnInit, inject } from '@angular/core';
+﻿import { Component, OnInit, inject } from '@angular/core';
+import { FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { StoreApiService, Product, ProductCategory, ProductBrand } from '../../../api-services/store/store-api.service';
 import { AuthFacadeService } from '../../../core/services/auth/auth-facade.service';
@@ -7,11 +8,11 @@ import { ToasterService } from '../../../core/services/toaster.service';
 @Component({selector:'app-catalog',standalone:false,template:`
 <section class="page catalog-page">
   <div class="catalog-heading"><div><h1>Proizvodi apoteke</h1><p>Pronađite proizvode po kategoriji, brendu ili nazivu.</p></div><a mat-stroked-button routerLink="/">Početna</a></div>
-  <div class="catalog-filters">
-    <mat-form-field appearance="outline"><mat-label>Pretraži proizvode</mat-label><input matInput [(ngModel)]="search" (ngModelChange)="load()" placeholder="Naziv ili opis"></mat-form-field>
-    <mat-form-field appearance="outline"><mat-label>Kategorija</mat-label><mat-select [(ngModel)]="categoryId" (selectionChange)="load()"><mat-option [value]="undefined">Sve kategorije</mat-option><mat-option *ngFor="let c of categories" [value]="c.id">{{c.name}}</mat-option></mat-select></mat-form-field>
-    <mat-form-field appearance="outline"><mat-label>Brend</mat-label><mat-select [(ngModel)]="brandId" (selectionChange)="load()"><mat-option [value]="undefined">Svi brendovi</mat-option><mat-option *ngFor="let b of brands" [value]="b.id">{{b.name}}</mat-option></mat-select></mat-form-field>
-    <mat-checkbox [(ngModel)]="discounted" (change)="load()">Samo sniženi</mat-checkbox>
+  <div class="catalog-filters" [formGroup]="filters">
+    <mat-form-field appearance="outline"><mat-label>Pretraži proizvode</mat-label><input matInput formControlName="search" (input)="load()" placeholder="Naziv ili opis"></mat-form-field>
+    <mat-form-field appearance="outline"><mat-label>Kategorija</mat-label><mat-select formControlName="categoryId" (selectionChange)="load()"><mat-option [value]="null">Sve kategorije</mat-option><mat-option *ngFor="let c of categories" [value]="c.id">{{c.name}}</mat-option></mat-select></mat-form-field>
+    <mat-form-field appearance="outline"><mat-label>Brend</mat-label><mat-select formControlName="brandId" (selectionChange)="load()"><mat-option [value]="null">Svi brendovi</mat-option><mat-option *ngFor="let b of brands" [value]="b.id">{{b.name}}</mat-option></mat-select></mat-form-field>
+    <mat-checkbox formControlName="discounted" (change)="load()">Samo sniženi</mat-checkbox>
   </div>
   <p class="result-count">Pronađeno proizvoda: {{total}}</p>
   <div class="product-grid" *ngIf="products.length; else empty">
@@ -44,15 +45,15 @@ import { ToasterService } from '../../../core/services/toaster.service';
   @media(max-width:560px){.catalog-heading{align-items:flex-start}.catalog-filters{grid-template-columns:1fr}.catalog-filters mat-checkbox{grid-column:auto}.product-grid{grid-template-columns:1fr 1fr;gap:.75rem}.product-image{height:150px}.product-card mat-card-actions button{font-size:.78rem;padding:0 .5rem}}
 ` ]})
 export class CatalogComponent implements OnInit {
-  private api=inject(StoreApiService); private auth=inject(AuthFacadeService); private toaster=inject(ToasterService); private route=inject(ActivatedRoute);
-  products:Product[]=[]; categories:ProductCategory[]=[]; brands:ProductBrand[]=[]; search=''; categoryId?:number; brandId?:number; discounted=false; page=1; total=0; totalPages=1;
+  private api=inject(StoreApiService); private fb=inject(FormBuilder); private auth=inject(AuthFacadeService); private toaster=inject(ToasterService); private route=inject(ActivatedRoute);
+  products:Product[]=[]; categories:ProductCategory[]=[]; brands:ProductBrand[]=[]; search=''; categoryId?:number; brandId?:number; discounted=false; filters=this.fb.group({search:['',[Validators.maxLength(120)]],categoryId:[null as number|null],brandId:[null as number|null],discounted:[false]}); page=1; total=0; totalPages=1;
   ngOnInit(){
     this.api.getCategories().subscribe(x=>{this.categories=x;this.applyQuery(this.route.snapshot.queryParamMap.get('category'),this.route.snapshot.queryParamMap.get('brandId'));});
     this.api.getBrands().subscribe(x=>{this.brands=x;this.applyQuery(this.route.snapshot.queryParamMap.get('category'),this.route.snapshot.queryParamMap.get('brandId'));});
     this.route.queryParamMap.subscribe(params=>this.applyQuery(params.get('category'),params.get('brandId')));
   }
-  private applyQuery(categoryName:string|null,brandValue:string|null){const categoryId=categoryName?this.categories.find(c=>c.name===categoryName)?.id:undefined;const brandId=brandValue?Number(brandValue):undefined;if(categoryId!==this.categoryId||brandId!==this.brandId){this.categoryId=categoryId;this.brandId=brandId;this.load();}else if(!this.products.length){this.load();}}
-  load(){this.page=1;this.fetch();}
+  private applyQuery(categoryName:string|null,brandValue:string|null){const categoryId=categoryName?this.categories.find(c=>c.name===categoryName)?.id:undefined;const brandId=brandValue?Number(brandValue):undefined;if(categoryId!==this.categoryId||brandId!==this.brandId){this.filters.patchValue({categoryId:categoryId??null,brandId:brandId??null},{emitEvent:false});this.categoryId=categoryId;this.brandId=brandId;this.load();}else if(!this.products.length){this.load();}}
+  load(){const values=this.filters.getRawValue();this.search=values.search??'';this.categoryId=values.categoryId??undefined;this.brandId=values.brandId??undefined;this.discounted=values.discounted??false;this.page=1;this.fetch();}
   fetch(){this.api.getProducts({search:this.search||undefined,categoryId:this.categoryId,brandId:this.brandId,discounted:this.discounted||undefined,page:this.page,pageSize:12}).subscribe(x=>{this.products=x.items;this.total=x.totalItems;this.totalPages=Math.max(1,x.totalPages);});}
   changePage(delta:number){this.page+=delta;this.fetch();window.scrollTo({top:0,behavior:'smooth'});}
   imageFallback(event:Event){(event.target as HTMLImageElement).src='/images/product-placeholder.svg';}

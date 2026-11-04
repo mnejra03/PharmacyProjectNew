@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { FormBuilder, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, Validators } from '@angular/forms';
 import { StoreApiService, Cart } from '../../../api-services/store/store-api.service';
 import { ToasterService } from '../../../core/services/toaster.service';
 
@@ -7,7 +7,7 @@ declare const Stripe: any;
 
 @Component({selector:'app-cart',standalone:false,template:`
 <section class="page"><h1>Korpa</h1><div class="cart-layout" *ngIf="cart as c; else loading">
-  <div class="cart-items"><article class="cart-item" *ngFor="let item of c.items"><img [src]="item.imageUrl" [alt]="item.name"><div class="cart-item-info"><a [routerLink]="['/product',item.productId]">{{item.name}}</a><small>{{item.unitPrice | number:'1.2-2'}} KM po komadu</small><div class="item-actions"><mat-form-field appearance="outline"><mat-label>Količina</mat-label><input matInput type="number" min="1" [max]="item.stock" [ngModel]="item.quantity" (ngModelChange)="update(item,$event)"></mat-form-field><button mat-button (click)="saveForLater(item)">{{item.savedForLater?'Vrati u korpu':'Sačuvaj za kasnije'}}</button><button mat-button color="warn" (click)="remove(item.id)">Ukloni</button></div></div><strong>{{item.lineTotal | number:'1.2-2'}} KM</strong></article>
+  <div class="cart-items"><article class="cart-item" *ngFor="let item of c.items"><img [src]="item.imageUrl" [alt]="item.name"><div class="cart-item-info"><a [routerLink]="['/product',item.productId]">{{item.name}}</a><small>{{item.unitPrice | number:'1.2-2'}} KM po komadu</small><div class="item-actions"><mat-form-field appearance="outline"><mat-label>Količina</mat-label><input matInput type="number" min="1" [max]="item.stock" [formControl]="quantityControl(item)" (blur)="update(item,quantityControl(item).value)"></mat-form-field><button mat-button (click)="saveForLater(item)">{{item.savedForLater?'Vrati u korpu':'Sačuvaj za kasnije'}}</button><button mat-button color="warn" (click)="remove(item.id)">Ukloni</button></div></div><strong>{{item.lineTotal | number:'1.2-2'}} KM</strong></article>
     <p *ngIf="!c.items.length" class="empty">Korpa je prazna. <a routerLink="/catalog">Pregledaj proizvode</a></p>
   </div>
   <aside class="checkout-box"><h2>Ukupno</h2><p><span>Broj artikala</span><strong>{{c.itemCount}}</strong></p><p class="total"><span>Za plaćanje</span><strong>{{c.total | number:'1.2-2'}} KM</strong></p>
@@ -18,9 +18,10 @@ declare const Stripe: any;
 ` ]})
 export class CartComponent implements OnInit {
   private api=inject(StoreApiService);private fb=inject(FormBuilder);private toaster=inject(ToasterService);
-  cart?:Cart;submitting=false;paymentError="";intent?:any;preparingIntent=false;private stripe:any;cardElement:any;form=this.fb.group({address:['',[Validators.required,Validators.maxLength(1000)]],payment:['CashOnDelivery',[Validators.required]]});
+  cart?:Cart;private quantityControls=new Map<number,FormControl<number>>();submitting=false;paymentError="";intent?:any;preparingIntent=false;private stripe:any;cardElement:any;form=this.fb.group({address:['',[Validators.required,Validators.maxLength(1000)]],payment:['CashOnDelivery',[Validators.required]]});
   ngOnInit(){this.load();this.form.controls.payment.valueChanges.subscribe(method=>{this.destroyCard();this.paymentError="";this.intent=undefined;if(method==="Card")this.prepareCard();});}
   load(){this.api.getCart().subscribe({next:x=>{this.cart=x;if(this.form.value.payment==="Card"&&x.itemCount&&!this.cardElement&&!this.preparingIntent)this.prepareCard();},error:()=>this.toaster.error('Korpu nije moguće učitati.')});}
+  quantityControl(item:Cart['items'][number]):FormControl<number>{let control=this.quantityControls.get(item.id);if(!control){control=new FormControl(item.quantity,{nonNullable:true,validators:[Validators.min(1),Validators.max(item.stock)]});this.quantityControls.set(item.id,control);}return control;}
   update(item:Cart['items'][number],quantity:number){if(!Number.isInteger(quantity)||quantity<1||quantity>item.stock)return;this.api.updateCartItem(item.id,quantity,item.savedForLater).subscribe({next:x=>this.cart=x,error:()=>this.toaster.error('Količina nije dostupna.')});}
   saveForLater(item:Cart['items'][number]){this.api.updateCartItem(item.id,item.quantity,!item.savedForLater).subscribe({next:x=>{this.cart=x;this.toaster.success(item.savedForLater?'Artikal je vraćen u korpu.':'Artikal je sačuvan za kasnije.');},error:()=>this.toaster.error('Izmjena nije sačuvana.')});}
   remove(id:number){this.api.removeCartItem(id).subscribe({next:()=>{this.load();this.toaster.success('Artikal je uklonjen iz korpe.');},error:()=>this.toaster.error('Stavku nije moguće ukloniti.')});}

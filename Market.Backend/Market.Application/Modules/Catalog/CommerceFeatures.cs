@@ -1,4 +1,6 @@
-using Market.Domain.Entities.Commerce;
+﻿using Market.Domain.Entities.Commerce;
+using Market.Domain.Entities.Communication;
+using Market.Application.Modules.Communication.Notifications;
 
 namespace Market.Application.Modules.Catalog;
 
@@ -6,8 +8,11 @@ public sealed record CartItemDto(int Id, int ProductId, string Name, string Imag
 public sealed record CartDto(IReadOnlyList<CartItemDto> Items, decimal Total, int ItemCount);
 public sealed record GetCartQuery : IRequest<CartDto>;
 public sealed record AddCartItemCommand(int ProductId, int Quantity = 1) : IRequest<CartDto>;
+public sealed class AddCartItemValidator : AbstractValidator<AddCartItemCommand> { public AddCartItemValidator() { RuleFor(x => x.ProductId).GreaterThan(0); RuleFor(x => x.Quantity).InclusiveBetween(1, 100000); } }
 public sealed record UpdateCartItemCommand(int Id, int Quantity, bool SavedForLater) : IRequest<CartDto>;
+public sealed class UpdateCartItemValidator : AbstractValidator<UpdateCartItemCommand> { public UpdateCartItemValidator() { RuleFor(x => x.Id).GreaterThan(0); RuleFor(x => x.Quantity).InclusiveBetween(1, 100000); } }
 public sealed record RemoveCartItemCommand(int Id) : IRequest;
+public sealed class RemoveCartItemValidator : AbstractValidator<RemoveCartItemCommand> { public RemoveCartItemValidator() => RuleFor(x => x.Id).GreaterThan(0); }
 public sealed record CheckoutCommand(string ShippingAddress, string PaymentMethod, string? PaymentReference = null) : IRequest<OrderDto>;
 public sealed record CreateCartPaymentIntentCommand : IRequest<CartPaymentIntentDto>;
 public sealed record CartPaymentIntentDto(string PaymentIntentId, string ClientSecret, string PublishableKey, decimal Amount, string Currency);
@@ -15,6 +20,7 @@ public sealed record OrderItemDto(int ProductId, string Name, int Quantity, deci
 public sealed record OrderDto(int Id, DateTime OrderedAtUtc, string Status, decimal TotalPrice, string PaymentMethod, string ShippingAddress, string CustomerName, string CustomerEmail, IReadOnlyList<OrderItemDto> Items, bool IsSupplyOrder = false);
 public sealed record GetOrdersQuery(bool All = false) : IRequest<IReadOnlyList<OrderDto>>;
 public sealed record UpdateOrderStatusCommand(int Id, string Status) : IRequest;
+public sealed class UpdateOrderStatusValidator : AbstractValidator<UpdateOrderStatusCommand> { public UpdateOrderStatusValidator() { RuleFor(x => x.Id).GreaterThan(0); RuleFor(x => x.Status).Must(x => new[] { "Pending", "Processing", "Shipped", "Completed", "Cancelled" }.Contains(x)).WithMessage("Status narudzbe nije ispravan."); } }
 
 public sealed class GetCartHandler(IAppDbContext db, IAppCurrentUser user) : IRequestHandler<GetCartQuery, CartDto>
 {
@@ -107,7 +113,7 @@ public sealed class CreateCartPaymentIntentHandler(IAppDbContext db, IAppCurrent
     }
 }
 
-public sealed class CheckoutHandler(IAppDbContext db, IAppCurrentUser user, IStripePaymentGateway stripe) : IRequestHandler<CheckoutCommand, OrderDto>
+public sealed class CheckoutHandler(IAppDbContext db, IAppCurrentUser user, IStripePaymentGateway stripe, IChatNotifier notifier) : IRequestHandler<CheckoutCommand, OrderDto>
 {
     public async Task<OrderDto> Handle(CheckoutCommand request, CancellationToken ct)
     {
@@ -137,7 +143,20 @@ public sealed class CheckoutHandler(IAppDbContext db, IAppCurrentUser user, IStr
             product.QuantityInStock -= item.Quantity; order.TotalPrice += price * item.Quantity;
         }
         db.Orders.Add(order); cart.IsCompleted = true;
+        var notifications = new List<NotificationEntity>
+        {
+            new() { UserId = customer.Id, Title = "Narudzba je zaprimljena", Message = $"Vasa narudzba #{order.Id} je zaprimljena i ceka obradu.", Type = "order_status", CreatedAt = DateTime.UtcNow }
+        };
+        var staff = await db.Users.Where(x => x.IsEnabled && (x.IsAdmin || x.IsPharmacist)).ToListAsync(ct);
+        foreach (var member in staff)
+            notifications.Add(new NotificationEntity { UserId = member.Id, SenderId = customer.Id, Title = "Nova narudzba", Message = $"Kupac {customer.FirstName} {customer.LastName} poslao je narudzbu #{order.Id}.", Type = "order_status", CreatedAt = DateTime.UtcNow });
+        db.Notifications.AddRange(notifications);
         await db.SaveChangesAsync(ct);
+        foreach (var notification in notifications)
+        {
+        await notifier.SendNotificationAsync(notification.UserId,
+            new NotificationDto(notification.Id, notification.Title, notification.Message, notification.CreatedAt, notification.IsRead, notification.Type, notification.SenderId), ct);
+        }
         return new(order.Id, order.OrderedAtUtc, order.Status, order.TotalPrice, order.PaymentMethod, order.ShippingAddress, $"{customer.FirstName} {customer.LastName}".Trim(), customer.Email, order.Items.Select(i => new OrderItemDto(i.ProductId, i.ProductName, i.Quantity, i.UnitPrice)).ToList());
     }
 }
@@ -155,7 +174,7 @@ public sealed class GetOrdersHandler(IAppDbContext db, IAppCurrentUser user) : I
     }
 }
 
-public sealed class UpdateOrderStatusHandler(IAppDbContext db, IAppCurrentUser user) : IRequestHandler<UpdateOrderStatusCommand>
+public sealed class UpdateOrderStatusHandler(IAppDbContext db, IAppCurrentUser user, IChatNotifier notifier) : IRequestHandler<UpdateOrderStatusCommand>
 {
     public async Task Handle(UpdateOrderStatusCommand request, CancellationToken ct)
     {
@@ -163,13 +182,26 @@ public sealed class UpdateOrderStatusHandler(IAppDbContext db, IAppCurrentUser u
         if (!new[] { "Pending", "Processing", "Shipped", "Completed", "Cancelled" }.Contains(request.Status)) throw new MarketConflictException("Status narudžbe nije ispravan.");
         var order = await db.Orders.FirstOrDefaultAsync(o => o.Id == request.Id, ct) ?? throw new MarketNotFoundException("Narudžba nije pronađena.");
         if (order.IsSupplyOrder) throw new MarketConflictException("Narudžbu zaliha ažurirajte kroz pregled nabavke.");
-        order.Status = request.Status; await db.SaveChangesAsync(ct);
+        order.Status = request.Status;
+        var notification = new NotificationEntity
+        {
+            UserId = order.UserId, SenderId = user.UserId,
+            Title = "Status narudzbe je promijenjen",
+            Message = $"Status vase narudzbe #{order.Id} promijenjen je u {request.Status}.",
+            Type = "order_status", CreatedAt = DateTime.UtcNow
+        };
+        db.Notifications.Add(notification);
+        await db.SaveChangesAsync(ct);
+        await notifier.SendNotificationAsync(notification.UserId,
+            new NotificationDto(notification.Id, notification.Title, notification.Message, notification.CreatedAt, notification.IsRead, notification.Type, notification.SenderId), ct);
     }
 }
 
 public sealed record GetWishlistQuery : IRequest<IReadOnlyList<ProductDto>>;
 public sealed record AddWishlistItemCommand(int ProductId) : IRequest;
+public sealed class AddWishlistItemValidator : AbstractValidator<AddWishlistItemCommand> { public AddWishlistItemValidator() => RuleFor(x => x.ProductId).GreaterThan(0); }
 public sealed record RemoveWishlistItemCommand(int ProductId) : IRequest;
+public sealed class RemoveWishlistItemValidator : AbstractValidator<RemoveWishlistItemCommand> { public RemoveWishlistItemValidator() => RuleFor(x => x.ProductId).GreaterThan(0); }
 public sealed class GetWishlistHandler(IAppDbContext db, IAppCurrentUser user) : IRequestHandler<GetWishlistQuery, IReadOnlyList<ProductDto>>
 {
     public async Task<IReadOnlyList<ProductDto>> Handle(GetWishlistQuery request, CancellationToken ct)
