@@ -1,0 +1,87 @@
+.login-container {
+  max-width: 400px;
+  margin: 5% auto;
+  padding: 2rem;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  font-family: Roboto, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.login-container h2 {
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+  font-size: 24px;
+  color: #3f3f3f;
+}
+
+form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+mat-slide-toggle {
+  align-self: flex-start;
+  font-size: 0.95rem;
+
+}
+.mat-slide-toggle.mat-checked .mat-slide-toggle-bar,
+.mat-slide-toggle.mat-checked .mat-slide-toggle-thumb {
+  background-color: rgb(27, 94, 32) !important;
+}
+
+
+
+
+.login-button {
+  height: 48px;
+  border: none;
+  border-radius: 8px;
+  background-color: rgb(27,94,32);
+  color: white;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.login-button:hover {
+  background-color: rgb(27,94,32);
+}
+
+p {
+  font-size: 0.9rem;
+  color: #555;
+  text-align: center;
+}
+
+a {
+  color: rgb(27,94,32);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.error-message {
+  background-color: #f8d7da;
+  color: #842029;
+  border: 1px solid #f5c2c7;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  width: 100%;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+mat-form-field { width: 100%; }
+.forgot-link { align-self: flex-end; }
+.back-to-home { display: inline-block; margin-top: 1rem; }

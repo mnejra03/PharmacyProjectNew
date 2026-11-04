@@ -1,0 +1,4 @@
+import { HttpClient } from '@angular/common/http'; import { inject, Injectable } from '@angular/core'; import { environment } from '../../../environments/environment';
+export interface ChatMessage { id:number; senderId:number; receiverId?:number; message:string; type:string; status:string; isResponse:boolean; sentAtUtc:string; }
+export interface ChatContact { id:number; firstName:string; lastName:string; email:string; }
+@Injectable({ providedIn:'root' }) export class ChatApiService { private http=inject(HttpClient); private url=`${environment.apiUrl}/api/chat`; getMessages(otherUserId?:number){return this.http.get<ChatMessage[]>(this.url,{params:otherUserId?{otherUserId}: {}});} getContacts(){return this.http.get<ChatContact[]>(`${this.url}/contacts`);} send(body:{receiverId:number;message:string}){return this.http.post<ChatMessage>(this.url,body);} }

@@ -1,0 +1,194 @@
+
+// Include theming for Angular Material with `mat.theme()`.
+// This Sass mixin will define CSS variables that are used for styling Angular Material
+// components according to the Material 3 design spec.
+// Learn more about theming and how to use it for your application's
+// custom components at https://material.angular.dev/guide/theming
+@use '@angular/material' as mat;
+
+html {
+  @include mat.theme((
+    color: (
+      primary: mat.$green-palette,
+      tertiary: mat.$green-palette,
+    ),
+    typography: Roboto,
+    density: 0,
+  ));
+}
+
+body {
+  // Default the application to a light color theme. This can be changed to
+  // `dark` to enable the dark color theme, or to `light dark` to defer to the
+  // user's system settings.
+  color-scheme: light;
+
+  // Set a default background, font and text colors for the application using
+  // Angular Material's system-level CSS variables. Learn more about these
+  // variables at https://material.angular.dev/guide/system-variables
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+
+  // Reset the user agent margin.
+  margin: 0;
+}
+
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Poppins, Roboto, "Helvetica Neue", sans-serif;
+  background: #f1f8e9;
+  color: #333;
+}
+
+// Consistent, readable styling for routed application pages.
+.page {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 100vh;
+  padding: clamp(1.25rem, 3vw, 2.5rem);
+  color: #333;
+  background: #f1f8e9;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.page h1,
+.page h2,
+.page h3 {
+  color: #1b5e20;
+  line-height: 1.3;
+}
+
+.page h1 {
+  margin: 0 0 1.5rem;
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 700;
+}
+
+.page h2 { margin: 1.75rem 0 1rem; font-size: 1.4rem; }
+.page p { color: #444; }
+.page form { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin: 0 0 1.5rem; }
+.page mat-form-field { min-width: min(100%, 220px); flex: 1 1 220px; }
+.page button { min-height: 2.75rem; font-weight: 600; }
+.page input[type="file"] { max-width: 100%; margin: 0.5rem; color: #333; font: inherit; }
+.page mat-card { margin: 0 0 1rem; color: #333; background: #fff; }
+.page mat-card-title { color: #1b5e20; }
+.page mat-card-subtitle { color: #59605a; }
+.page mat-card-content { color: #333; line-height: 1.65; }
+.page mat-list-item { color: #333; }
+.page table[mat-table] { width: 100%; overflow: auto; background: #fff; }
+.page th[mat-header-cell] { color: #1b5e20; background: #d0eccf; font-size: 0.95rem; font-weight: 700; }
+.page td[mat-cell] { color: #333; }
+.page tr[mat-row]:nth-child(even) { background: #f8fbf5; }
+
+.client-nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem clamp(1rem, 3vw, 2rem);
+  border-bottom: 1px solid #145218;
+  background: #1b5e20;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
+}
+
+.client-nav a[mat-button] {
+  min-height: 2.75rem;
+  color: #f5fff5 !important;
+  --mdc-text-button-label-text-color: #f5fff5;
+  --mat-text-button-state-layer-color: #fff;
+  font-weight: 600;
+}
+.client-nav a[mat-button] .mdc-button__label { color: #f5fff5 !important; }
+.client-nav a[mat-button]:hover {
+  background: #287342;
+  --mdc-text-button-label-text-color: #fff;
+}
+
+@media (max-width: 600px) {
+  .page { padding: 1rem; }
+  .page form { align-items: stretch; gap: 0.75rem; }
+  .page mat-form-field { flex-basis: 100%; }
+  .page table[mat-table] { display: block; max-width: 100%; overflow-x: auto; }
+  .client-nav { gap: 0.25rem; padding: 0.5rem; }
+  .client-nav a[mat-button] { padding-inline: 0.5rem; font-size: 0.85rem; }
+}
+
+
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+
+// Add this to your global styles.scss
+
+// ===========================
+// TOASTER / SNACKBAR STYLES
+// ===========================
+
+.snackbar-success {
+  background-color: #087443 !important;
+  color: white !important;
+
+  .mat-mdc-snack-bar-label {
+    color: white !important;
+  }
+
+  .mat-mdc-button {
+    color: white !important;
+  }
+}
+
+.snackbar-error {
+  background-color: #b42318 !important;
+  color: white !important;
+
+  .mat-mdc-snack-bar-label {
+    color: white !important;
+  }
+
+  .mat-mdc-button {
+    color: white !important;
+  }
+}
+
+.snackbar-warning {
+  background-color: #9a4d00 !important;
+  color: white !important;
+
+  .mat-mdc-snack-bar-label {
+    color: white !important;
+  }
+
+  .mat-mdc-button {
+    color: white !important;
+  }
+}
+
+.snackbar-info {
+  background-color: #175cd3 !important;
+  color: white !important;
+
+  .mat-mdc-snack-bar-label {
+    color: white !important;
+  }
+
+  .mat-mdc-button {
+    color: white !important;
+  }
+}
+
+.status-pill { display:inline-flex; align-items:center; padding:.35rem .7rem; border-radius:999px; font-size:.8rem; font-weight:800; }
+.status-pending { background:#fff1bf; color:#7a4b00; }
+.status-processing { background:#dbeafe; color:#174ea6; }
+.status-shipped { background:#ede9fe; color:#5b21b6; }
+.status-completed { background:#d1fae5; color:#065f46; }
+.status-cancelled { background:#fee2e2; color:#991b1b; }

@@ -1,0 +1,32 @@
+<div class="login-container">
+  <p *ngIf="errorMessage" class="error-message">{{ errorMessage }}</p>
+  <h2>Prijava</h2>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <mat-form-field appearance="outline">
+      <mat-label>Email</mat-label>
+      <input matInput type="email" formControlName="email" autocomplete="username" />
+      <mat-error *ngIf="form.controls.email.hasError('required')">Email je obavezan.</mat-error>
+      <mat-error *ngIf="form.controls.email.hasError('email')">Unesite ispravnu email adresu.</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Lozinka</mat-label>
+      <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password" autocomplete="current-password" />
+      <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword" aria-label="Prikaži ili sakrij lozinku">
+        <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+      <mat-error *ngIf="form.controls.password.hasError('required')">Lozinka je obavezna.</mat-error>
+    </mat-form-field>
+
+    <mat-checkbox formControlName="rememberMe">Zapamti me</mat-checkbox>
+    <a routerLink="/auth/forgot-password" class="forgot-link">Zaboravili ste lozinku?</a>
+
+    <button class="login-button" mat-raised-button color="primary" type="submit" [disabled]="form.invalid || isLoading">
+      {{ isLoading ? 'Prijava u toku…' : 'Prijavi se' }}
+    </button>
+    <p>Nemate račun? <a routerLink="/auth/register">Registrujte se</a></p>
+  </form>
+
+  <a routerLink="/" class="back-to-home">Nazad na početnu</a>
+</div>

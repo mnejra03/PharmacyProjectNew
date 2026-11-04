@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="360" viewBox="0 0 480 360">
+  <rect width="480" height="360" rx="24" fill="#edf4ee"/>
+  <rect x="154" y="74" width="172" height="212" rx="28" fill="#ffffff" stroke="#477b57" stroke-width="10"/>
+  <path d="M196 145h88M196 184h88M196 223h55" stroke="#477b57" stroke-linecap="round" stroke-width="12"/>
+  <text x="240" y="326" text-anchor="middle" font-family="Arial,sans-serif" font-size="20" fill="#385843">Slika nije dostupna</text>
+</svg>

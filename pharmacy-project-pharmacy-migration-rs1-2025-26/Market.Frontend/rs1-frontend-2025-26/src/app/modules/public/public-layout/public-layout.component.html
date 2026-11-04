@@ -1,0 +1,83 @@
+<header class="header">
+  <div class="search-bar">
+    <div class="logo">
+      <a routerLink="/" aria-label="Apoteka - početna stranica">
+        <img src="images/logo.jpg" alt="Apoteka" />
+      </a>
+    </div>
+
+    <div class="search">
+      <input
+        type="search"
+        [(ngModel)]="searchQuery"
+        (input)="onSearch()"
+        placeholder="Pretraži proizvode"
+        aria-label="Pretraži proizvode"
+      />
+      <div *ngIf="searchResults.length" class="search-results">
+        <ul>
+          <li *ngFor="let product of searchResults" (click)="goToProduct(product.id)">
+            {{ product.name }}
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="header-icons">
+      <a routerLink="/client/wishlist" routerLinkActive="active" *ngIf="isCustomerLoggedIn()">
+        <img src="images/wishlist.png" class="icon" alt="" /> Favoriti
+      </a>
+      <a routerLink="/auth/login" routerLinkActive="active" *ngIf="!auth.isAuthenticated()">
+        <img src="images/login.png" class="icon" alt="" /> Prijava
+      </a>
+      <a routerLink="/client/orders" routerLinkActive="active" *ngIf="isCustomerLoggedIn()">
+        <img src="images/online-shopping.png" class="icon" alt="" /> Narudžbe
+      </a>
+      <a routerLink="/client/cart" routerLinkActive="active">
+        <img src="images/cart.jpg" class="icon" alt="" /> Korpa
+        <span *ngIf="cartCount" class="badge">{{ cartCount }}</span>
+      </a>
+    </div>
+  </div>
+
+  <nav class="navigation" aria-label="Glavna navigacija">
+    <ul>
+      <li><a routerLink="/catalog" routerLinkActive="active">Svi proizvodi</a></li>
+      <li><a routerLink="/catalog" [queryParams]="{ category: 'Your health' }">Zdravlje</a></li>
+      <li><a routerLink="/catalog" [queryParams]="{ category: 'Beauty and care' }">Njega i ljepota</a></li>
+      <li><a routerLink="/catalog" [queryParams]="{ category: 'Childcare' }">Djeca</a></li>
+      <li><a routerLink="/catalog" [queryParams]="{ category: 'Devices' }">Uređaji</a></li>
+      <li *ngIf="auth.isAuthenticated()"><a routerLink="/client/notifications" routerLinkActive="active" class="notifications-link">Obavijesti<span *ngIf="unreadCount$ | async as unread"><span *ngIf="unread > 0" class="notification-badge" [attr.aria-label]="unread + ' nepročitanih obavijesti'">{{unread > 9 ? '9+' : unread}}</span></span></a></li>
+    </ul>
+    <div *ngIf="auth.isAuthenticated()" class="logout-container">
+      <a routerLink="/client/profile" class="account-link">Moj profil</a>
+      <a routerLink="/auth/logout" class="logout-button">Odjava</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <router-outlet></router-outlet>
+</main>
+
+<footer class="app-footer">
+  <div class="footer-content">
+    <div class="footer-section">
+      <h4>O nama</h4>
+      <p>Vaša apoteka za zdravlje, njegu i svakodnevnu brigu o porodici.</p>
+    </div>
+    <div class="footer-section">
+      <h4>Kontakt</h4>
+      <p>Email: info&#64;apoteka.local</p>
+      <p>Telefon: +387 33 123 456</p>
+    </div>
+    <div class="footer-section">
+      <h4>Pratite nas</h4>
+      <div class="social-icons">
+        <a href="#" aria-label="Facebook"><img src="images/facebook.png" alt="" /></a>
+        <a href="#" aria-label="Instagram"><img src="images/instagram.png" alt="" /></a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom"><p>&copy; {{ currentYear }} Apoteka</p></div>
+</footer>

@@ -1,0 +1,37 @@
+<section class="settings-page">
+  <header class="page-heading">
+    <p class="eyebrow">Administracija</p>
+    <h1>Postavke</h1>
+    <p>Upravljajte administratorskim profilom i pristupnom lozinkom.</p>
+  </header>
+
+  <div class="settings-grid">
+    <mat-card>
+      <mat-card-header><mat-card-title>Profil administratora</mat-card-title></mat-card-header>
+      <mat-card-content>
+        <div class="profile-photo">
+          <img *ngIf="profileImageUrl" [src]="profileImageUrl" alt="Profilna slika administratora">
+          <mat-icon *ngIf="!profileImageUrl">account_circle</mat-icon>
+          <label class="upload-button">Promijeni sliku<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" (change)="uploadProfileImage($event)"></label>
+        </div>
+        <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+          <mat-form-field appearance="outline"><mat-label>Ime</mat-label><input matInput formControlName="firstName"><mat-error>Ime je obavezno.</mat-error></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Prezime</mat-label><input matInput formControlName="lastName"><mat-error>Prezime je obavezno.</mat-error></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Telefon</mat-label><input matInput formControlName="phoneNumber"></mat-form-field>
+          <button mat-raised-button color="primary" type="submit" [disabled]="savingProfile">{{savingProfile?'Čuvam…':'Sačuvaj profil'}}</button>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card>
+      <mat-card-header><mat-card-title>Promjena lozinke</mat-card-title></mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+          <mat-form-field appearance="outline"><mat-label>Trenutna lozinka</mat-label><input matInput type="password" formControlName="currentPassword"><mat-error>Unesite trenutnu lozinku.</mat-error></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Nova lozinka</mat-label><input matInput type="password" formControlName="newPassword"><mat-hint>Najmanje 8 znakova</mat-hint><mat-error>Nova lozinka mora imati najmanje 8 znakova.</mat-error></mat-form-field>
+          <button mat-raised-button color="primary" type="submit" [disabled]="changingPassword">{{changingPassword?'Mijenjam…':'Promijeni lozinku'}}</button>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</section>

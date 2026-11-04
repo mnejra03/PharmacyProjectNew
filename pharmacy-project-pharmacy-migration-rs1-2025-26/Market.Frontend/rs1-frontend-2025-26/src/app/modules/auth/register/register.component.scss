@@ -1,0 +1,8 @@
+ .register-card { max-width:420px; margin:5% auto; padding:2rem; border-radius:16px; background:#fff; box-shadow:0 12px 30px rgba(0,0,0,.1); font-family:Poppins,Arial,sans-serif; text-align:center; }
+.register-card h1 { margin:0 0 1.5rem; color:#1b5e20; font-size:1.8rem; font-weight:600; }
+.register-card form { display:flex; flex-direction:column; gap:1rem; }
+.register-card mat-form-field { width:100%; text-align:left; }
+.register-card button { min-height:46px; background:#1b5e20; color:#fff; font-weight:600; }
+.register-card a { display:inline-block; margin-top:1rem; color:#1b5e20; text-decoration:none; }
+.register-card .error { color:#b42318; }
+@media(max-width:480px) { .register-card { margin:1rem; padding:1.25rem; } }

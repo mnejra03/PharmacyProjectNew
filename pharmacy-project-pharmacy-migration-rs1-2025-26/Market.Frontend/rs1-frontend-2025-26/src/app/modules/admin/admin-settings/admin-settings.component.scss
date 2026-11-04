@@ -1,0 +1,15 @@
+.settings-page { max-width: 1100px; margin: 0 auto; padding: 1.5rem; color: #213629; }
+.page-heading { margin-bottom: 1.5rem; }
+.page-heading h1 { margin: .2rem 0; color: #1b5e20; }
+.page-heading p { color: #526458; }
+.eyebrow { margin: 0; color: #2e7d32 !important; font-size: .8rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+mat-card { border: 1px solid #dce6df; border-radius: 12px; }
+mat-card-content { padding-top: 1rem; }
+form { display: grid; gap: .5rem; }
+mat-form-field { width: 100%; }
+.profile-photo { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+.profile-photo img,.profile-photo mat-icon { width: 88px; height: 88px; border-radius: 50%; object-fit: cover; color: #68936c; font-size: 88px; }
+.upload-button { position: relative; padding: .6rem .9rem; border: 1px solid #2e7d32; border-radius: 6px; color: #1b5e20; font-weight: 600; cursor: pointer; }
+.upload-button input { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
+@media(max-width:760px) { .settings-grid { grid-template-columns: 1fr; } .settings-page { padding: 1rem .5rem; } }
