@@ -1,4 +1,4 @@
-﻿# PharmacyProjectNew
+# PharmacyProjectNew
 
 Web aplikacija za apoteku sastavljena od ASP.NET Core 8 backenda i Angular 21 frontenda. Backend koristi Clean Architecture, CQRS, JWT autentifikaciju i FluentValidation. Frontend koristi Angular Reactive Forms i validatore.
 
@@ -28,7 +28,6 @@ PharmacyProjectNew/
 ├── Market.Frontend/      # Angular aplikacija
 ├── db-backups/           # SQL Server .bak backup baze
 ├── dokumenti/            # Mermaid dijagrami sistema i poslovnih flowova
-├── MIGRATION_MAP.md
 └── README.md
 ```
 
@@ -185,8 +184,6 @@ U stvarnom fajlu spoji vrijednosti u postojeće `ConnectionStrings` i `Stripe` s
 ## Funkcionalnosti
 
 Aplikacija obuhvata katalog s kategorijama i filterima, korpu sa spremanjem artikala za kasnije, checkout i Stripe testno plaćanje, favorite, ocjene i recenzije, recepte, obavijesti, chat, korisničke profile i administratorsko upravljanje korisnicima, proizvodima, narudžbama i oglasima. Podržani su upload slika i zahtjevi farmaceuta za nabavku koje administrator može odobriti ili odbiti.
-
-Mapa prenesenih funkcionalnosti, poznatih ograničenja i odluka o zadržavanju kataloga nalazi se u [MIGRATION_MAP.md](MIGRATION_MAP.md).
 
 ## Reset lozinke i email
 
