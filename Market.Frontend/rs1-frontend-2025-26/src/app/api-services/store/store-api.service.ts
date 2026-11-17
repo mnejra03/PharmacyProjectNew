@@ -1,5 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
+import { BehaviorSubject, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface Product { id:number; name:string; description:string; price:number; currentPrice:number; quantityInStock:number; imageUrl:string; categoryId:number; categoryName:string; brandId?:number; brandName?:string; isDiscounted:boolean; discountPercentage?:number; expiryDate?:string; averageRating:number; reviewCount:number; }
@@ -19,6 +20,8 @@ export interface SaveProduct { name:string; description:string; price:number; qu
 export class StoreApiService {
   private http=inject(HttpClient);
   private base=environment.apiUrl;
+  private readonly cartCountSubject=new BehaviorSubject<number>(0);
+  readonly cartCount$=this.cartCountSubject.asObservable();
   getProducts(filter:{search?:string;categoryId?:number;brandId?:number;discounted?:boolean;page?:number;pageSize?:number;sortBy?:string;sortDescending?:boolean}={}) {
     let params=new HttpParams();
     for(const [key,value] of Object.entries(filter)) if(value!==undefined && value!==null && value!=='') params=params.set(key,String(value));
@@ -32,9 +35,10 @@ export class StoreApiService {
   uploadProductImage(file:File){const form=new FormData();form.append('file',file);return this.http.post<{imageUrl:string}>(`${this.base}/api/products/image`,form,{reportProgress:true,observe:'events'});}
   deleteProduct(id:number){return this.http.delete<void>(`${this.base}/api/products/${id}`);}
   restockProduct(id:number,quantity:number){return this.http.post<number>(`${this.base}/api/products/${id}/restock`,{quantity});}
-  getCart(){return this.http.get<Cart>(`${this.base}/api/cart`);}
-  addToCart(productId:number,quantity=1){return this.http.post<Cart>(`${this.base}/api/cart/items`,{productId,quantity});}
-  updateCartItem(id:number,quantity:number,savedForLater:boolean){return this.http.put<Cart>(`${this.base}/api/cart/items/${id}`,{id,quantity,savedForLater});}
+  getCart(){return this.http.get<Cart>(`${this.base}/api/cart`).pipe(tap(cart=>this.cartCountSubject.next(cart.itemCount)));}
+  addToCart(productId:number,quantity=1){return this.http.post<Cart>(`${this.base}/api/cart/items`,{productId,quantity}).pipe(tap(cart=>this.cartCountSubject.next(cart.itemCount)));}
+  updateCartItem(id:number,quantity:number,savedForLater:boolean){return this.http.put<Cart>(`${this.base}/api/cart/items/${id}`,{id,quantity,savedForLater}).pipe(tap(cart=>this.cartCountSubject.next(cart.itemCount)));}
+  setCartCount(count:number){this.cartCountSubject.next(count);}
   removeCartItem(id:number){return this.http.delete<void>(`${this.base}/api/cart/items/${id}`);}
   createPaymentIntent(){return this.http.post<CartPaymentIntent>(`${this.base}/api/payments/intent`,{});}
   checkout(shippingAddress:string,paymentMethod:string,paymentReference?:string){return this.http.post<PharmacyOrder>(`${this.base}/api/cart/checkout`,{shippingAddress,paymentMethod,paymentReference});}

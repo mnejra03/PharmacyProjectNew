@@ -15,6 +15,7 @@ import {
 } from '../../../api-services/auth/auth-api.model';
 
 import { AuthStorageService } from './auth-storage.service';
+import { StoreApiService } from '../../../api-services/store/store-api.service';
 import { CurrentUserDto } from './current-user.dto';
 import { JwtPayloadDto } from './jwt-payload.dto';
 
@@ -33,6 +34,7 @@ import { JwtPayloadDto } from './jwt-payload.dto';
 export class AuthFacadeService {
   private api = inject(AuthApiService);
   private storage = inject(AuthStorageService);
+  private store = inject(StoreApiService);
   private router = inject(Router);
 
   // === Reactive state: current user ===
@@ -178,5 +180,6 @@ export class AuthFacadeService {
   private clearUserState(): void {
     this._currentUser.set(null);
     this.storage.clear();
+    this.store.setCartCount(0);
   }
 }

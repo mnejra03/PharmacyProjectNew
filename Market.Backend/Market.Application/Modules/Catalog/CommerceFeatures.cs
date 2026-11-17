@@ -128,6 +128,8 @@ public sealed class CheckoutHandler(IAppDbContext db, IAppCurrentUser user, IStr
         if (request.PaymentMethod == "Card")
         {
             if (string.IsNullOrWhiteSpace(request.PaymentReference)) throw new MarketConflictException("Kartično plaćanje nije potvrđeno.");
+            if (await db.Orders.AnyAsync(o => o.PaymentReference == request.PaymentReference, ct))
+                throw new MarketConflictException("Ova potvrda kartičnog plaćanja već je iskorištena za drugu narudžbu.");
             var payment = await stripe.GetIntentAsync(request.PaymentReference, ct);
             var expectedMinor = decimal.ToInt64(decimal.Round(totalDue * 100m, 0, MidpointRounding.AwayFromZero));
             if (payment is null || payment.Status != "succeeded" || payment.UserId != user.UserId!.Value.ToString() || payment.Currency != "bam" || payment.AmountMinor != expectedMinor)

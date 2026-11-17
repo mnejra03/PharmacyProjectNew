@@ -20,12 +20,12 @@ export class PublicLayoutComponent implements OnInit {
   readonly currentYear = new Date().getFullYear();
   readonly searchControl = new FormControl('', { nonNullable: true, validators: [Validators.maxLength(100)] });
   searchResults: Product[] = [];
-  cartCount = 0;
+  readonly cartCount$ = this.store.cartCount$;
   readonly unreadCount$ = this.notifications.unreadCount$;
 
   ngOnInit(): void {
     if (this.auth.isAuthenticated()) {
-      this.store.getCart().subscribe({ next: cart => this.cartCount = cart.itemCount, error: () => this.cartCount = 0 });
+      this.store.getCart().subscribe({ error: () => this.store.setCartCount(0) });
       this.notifications.getAll().subscribe({ error: () => this.notifications.setUnreadCount(0) });
     }
   }

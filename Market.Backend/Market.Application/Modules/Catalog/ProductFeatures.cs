@@ -17,7 +17,7 @@ public sealed class SaveProductValidator : AbstractValidator<SaveProductCommand>
         RuleFor(x => x.QuantityInStock).GreaterThanOrEqualTo(0);
         RuleFor(x => x.ImageUrl).NotEmpty().MaximumLength(1000);
         RuleFor(x => x.CategoryId).GreaterThan(0);
-        RuleFor(x => x.DiscountPercentage).InclusiveBetween(0.01m, 99.99m).When(x => x.IsDiscounted);
+        RuleFor(x => x.DiscountPercentage).NotNull().InclusiveBetween(0.01m, 99.99m).When(x => x.IsDiscounted);
     }
 }
 

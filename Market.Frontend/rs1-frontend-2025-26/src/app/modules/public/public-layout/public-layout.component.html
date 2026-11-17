@@ -34,9 +34,9 @@
       <a routerLink="/client/orders" routerLinkActive="active" *ngIf="isCustomerLoggedIn()">
         <img src="images/online-shopping.png" class="icon" alt="" /> Narudžbe
       </a>
-      <a routerLink="/client/cart" routerLinkActive="active">
+      <a routerLink="/client/cart" routerLinkActive="active" class="cart-link">
         <img src="images/cart.jpg" class="icon" alt="" /> Korpa
-        <span *ngIf="cartCount" class="badge">{{ cartCount }}</span>
+        <ng-container *ngIf="cartCount$ | async as cartCount"><span *ngIf="cartCount > 0" class="badge" [attr.aria-label]="cartCount + ' artikala u korpi'">{{ cartCount }}</span></ng-container>
       </a>
     </div>
   </div>

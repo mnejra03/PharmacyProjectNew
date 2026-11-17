@@ -249,6 +249,22 @@ main {
   border-radius: 50%;
   line-height: 1;
 }
+.header-icons .cart-link .badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 21px;
+  height: 21px;
+  margin-left: 2px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #d62828;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+}
 
 .custom-modal-overlay-logout {
   position: fixed;
