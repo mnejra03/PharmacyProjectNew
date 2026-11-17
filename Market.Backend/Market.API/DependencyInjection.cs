@@ -1,10 +1,12 @@
-﻿using Market.Infrastructure.Common;
+using Market.Infrastructure.Common;
+using Market.Application.Abstractions;
 using Market.Shared.Dtos;
 using Market.Shared.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Security.Claims;
 
 namespace Market.API;
 
@@ -60,6 +62,25 @@ public static class DependencyInjection
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key)),
                 ValidateLifetime = true,
                 ClockSkew = TimeSpan.Zero
+            };
+            o.Events = new JwtBearerEvents
+            {
+                OnTokenValidated = async context =>
+                {
+                    var userIdValue = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+                    var tokenVersionValue = context.Principal?.FindFirstValue("ver");
+                    if (!int.TryParse(userIdValue, out var userId) ||
+                        !int.TryParse(tokenVersionValue, out var tokenVersion))
+                    {
+                        context.Fail("JWT nedostaju podaci o korisniku ili verziji tokena.");
+                        return;
+                    }
+
+                    var accountValidator = context.HttpContext.RequestServices
+                        .GetRequiredService<IAccessTokenAccountValidator>();
+                    if (!await accountValidator.IsCurrentAsync(userId, tokenVersion, context.HttpContext.RequestAborted))
+                        context.Fail("Korisnički nalog je neaktivan ili je pristupni token opozvan.");
+                }
             };
         });
 

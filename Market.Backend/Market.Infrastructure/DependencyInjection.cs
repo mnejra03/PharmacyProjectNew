@@ -39,6 +39,7 @@ public static class DependencyInjection
 
         // IAppDbContext mapping
         services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<DatabaseContext>());
+        services.AddScoped<IAccessTokenAccountValidator, AccessTokenAccountValidator>();
 
         // Identity hasher
         services.AddScoped<IPasswordHasher<MarketUserEntity>, PasswordHasher<MarketUserEntity>>();
