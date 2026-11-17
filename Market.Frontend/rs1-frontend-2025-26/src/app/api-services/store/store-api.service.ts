@@ -19,7 +19,7 @@ export interface SaveProduct { name:string; description:string; price:number; qu
 export class StoreApiService {
   private http=inject(HttpClient);
   private base=environment.apiUrl;
-  getProducts(filter:{search?:string;categoryId?:number;brandId?:number;discounted?:boolean;page?:number;pageSize?:number}={}) {
+  getProducts(filter:{search?:string;categoryId?:number;brandId?:number;discounted?:boolean;page?:number;pageSize?:number;sortBy?:string;sortDescending?:boolean}={}) {
     let params=new HttpParams();
     for(const [key,value] of Object.entries(filter)) if(value!==undefined && value!==null && value!=='') params=params.set(key,String(value));
     return this.http.get<ProductPage>(`${this.base}/api/products`,{params});
@@ -29,7 +29,7 @@ export class StoreApiService {
   getBrands(){return this.http.get<ProductBrand[]>(`${this.base}/api/brands`);}
   createProduct(body:SaveProduct){return this.http.post<Product>(`${this.base}/api/products`,body);}
   updateProduct(id:number,body:SaveProduct){return this.http.put<Product>(`${this.base}/api/products/${id}`,body);}
-  uploadProductImage(file:File){const form=new FormData();form.append('file',file);return this.http.post<{imageUrl:string}>(`${this.base}/api/products/image`,form);}
+  uploadProductImage(file:File){const form=new FormData();form.append('file',file);return this.http.post<{imageUrl:string}>(`${this.base}/api/products/image`,form,{reportProgress:true,observe:'events'});}
   deleteProduct(id:number){return this.http.delete<void>(`${this.base}/api/products/${id}`);}
   restockProduct(id:number,quantity:number){return this.http.post<number>(`${this.base}/api/products/${id}/restock`,{quantity});}
   getCart(){return this.http.get<Cart>(`${this.base}/api/cart`);}

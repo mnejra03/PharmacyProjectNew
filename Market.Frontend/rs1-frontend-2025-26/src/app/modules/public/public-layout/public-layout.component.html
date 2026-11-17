@@ -17,7 +17,8 @@
       <div *ngIf="searchResults.length" class="search-results">
         <ul>
           <li *ngFor="let product of searchResults" (click)="goToProduct(product.id)">
-            {{ product.name }}
+            <strong>{{ product.name }}</strong>
+            <small *ngIf="searchDescription(product) as snippet">{{snippet.before}}<strong *ngIf="snippet.matchedText" class="search-hit">{{snippet.matchedText}}</strong>{{snippet.after}}</small>
           </li>
         </ul>
       </div>

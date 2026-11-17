@@ -9,5 +9,9 @@ public sealed class RegisterCommandValidator : AbstractValidator<RegisterCommand
         RuleFor(x => x.FirstName).NotEmpty().MaximumLength(100);
         RuleFor(x => x.LastName).NotEmpty().MaximumLength(100);
         RuleFor(x => x.PhoneNumber).MaximumLength(30);
+        RuleFor(x => x.PhoneNumber)
+            .Matches(@"^(?:(?:060\d{7}|06[1-9]\d{6})|\+?387(?:60\d{7}|6[1-9]\d{6}))$")
+            .WithMessage("Unesite ispravan broj telefona.")
+            .When(x => !string.IsNullOrWhiteSpace(x.PhoneNumber));
     }
 }

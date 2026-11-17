@@ -5,4 +5,8 @@
 .register-card button { min-height:46px; background:#1b5e20; color:#fff; font-weight:600; }
 .register-card a { display:inline-block; margin-top:1rem; color:#1b5e20; text-decoration:none; }
 .register-card .error { color:#b42318; }
+.register-card .password-strength { margin:-.6rem 0 .25rem; text-align:left; color:#526458; }
+.strength-track { height:6px; margin-bottom:.35rem; overflow:hidden; border-radius:99px; background:#e5ebe7; }
+.strength-fill { display:block; height:100%; transition:width .2s ease,background .2s ease; background:#b42318; }
+.strength-2 { background:#c98218; }.strength-3 { background:#d2ae24; }.strength-4,.strength-5 { background:#287a3e; }
 @media(max-width:480px) { .register-card { margin:1rem; padding:1.25rem; } }

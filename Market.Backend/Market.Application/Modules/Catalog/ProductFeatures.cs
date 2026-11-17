@@ -1,7 +1,7 @@
 ﻿namespace Market.Application.Modules.Catalog;
 
 public sealed record ProductDto(int Id, string Name, string Description, decimal Price, decimal CurrentPrice, int QuantityInStock, string ImageUrl, int CategoryId, string CategoryName, int? BrandId, string? BrandName, bool IsDiscounted, decimal? DiscountPercentage, DateTime? ExpiryDate, double AverageRating, int ReviewCount);
-public sealed record ProductListQuery(string? Search, int? CategoryId, int? BrandId, bool? Discounted, int Page = 1, int PageSize = 12) : IRequest<PageResult<ProductDto>>;
+public sealed record ProductListQuery(string? Search, int? CategoryId, int? BrandId, bool? Discounted, int Page = 1, int PageSize = 12, string? SortBy = null, bool SortDescending = false) : IRequest<PageResult<ProductDto>>;
 public sealed record ProductByIdQuery(int Id) : IRequest<ProductDto>;
 public sealed record SaveProductCommand(int? Id, string Name, string Description, decimal Price, int QuantityInStock, string ImageUrl, int CategoryId, int? BrandId, bool IsDiscounted, decimal? DiscountPercentage, DateTime? ExpiryDate) : IRequest<ProductDto>;
 public sealed record DeleteProductCommand(int Id) : IRequest;
@@ -32,7 +32,20 @@ public sealed class ProductListHandler(IAppDbContext db) : IRequestHandler<Produ
         if (request.Discounted == true) query = query.Where(p => p.IsDiscounted && p.DiscountPercentage != null);
         var page = new PageRequest { Page = Math.Max(1, request.Page), PageSize = Math.Clamp(request.PageSize, 1, 100) };
         var total = await query.CountAsync(ct);
-        var products = await query.OrderBy(p => p.Name).Skip(page.SkipCount).Take(page.PageSize).ToListAsync(ct);
+        query = (request.SortBy?.ToLowerInvariant(), request.SortDescending) switch
+        {
+            ("price", false) => query.OrderBy(p => p.IsDiscounted && p.DiscountPercentage.HasValue ? p.Price * (1m - p.DiscountPercentage.Value / 100m) : p.Price).ThenBy(p => p.Name),
+            ("price", true) => query.OrderByDescending(p => p.IsDiscounted && p.DiscountPercentage.HasValue ? p.Price * (1m - p.DiscountPercentage.Value / 100m) : p.Price).ThenBy(p => p.Name),
+            ("rating", false) => query.OrderBy(p => !p.Reviews.Any()).ThenBy(p => p.Reviews.Any() ? p.Reviews.Average(r => r.Rating) : 0).ThenBy(p => p.Name),
+            ("rating", true) => query.OrderByDescending(p => p.Reviews.Any() ? p.Reviews.Average(r => r.Rating) : 0).ThenBy(p => p.Name),
+            ("stock", false) => query.OrderBy(p => p.QuantityInStock).ThenBy(p => p.Name),
+            ("stock", true) => query.OrderByDescending(p => p.QuantityInStock).ThenBy(p => p.Name),
+            ("category", false) => query.OrderBy(p => p.Category!.Name).ThenBy(p => p.Name),
+            ("category", true) => query.OrderByDescending(p => p.Category!.Name).ThenBy(p => p.Name),
+            (_, true) => query.OrderByDescending(p => p.Name),
+            _ => query.OrderBy(p => p.Name)
+        };
+        var products = await query.Skip(page.SkipCount).Take(page.PageSize).ToListAsync(ct);
         return new PageResult<ProductDto> { Items = products.Select(ToDto).ToList(), PageSize = page.PageSize, CurrentPage = page.Page, IncludedTotal = true, TotalItems = total, TotalPages = (int)Math.Ceiling(total / (double)page.PageSize) };
     }
 

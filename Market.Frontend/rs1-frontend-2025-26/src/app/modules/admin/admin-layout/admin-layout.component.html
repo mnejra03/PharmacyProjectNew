@@ -79,6 +79,10 @@
         <mat-icon matListItemIcon>receipt_long</mat-icon>
         <span matListItemTitle>Narudžbe</span>
       </a>
+      <a mat-list-item routerLink="/admin/notifications" routerLinkActive="active">
+        <mat-icon matListItemIcon>notifications</mat-icon>
+        <span matListItemTitle>Obavijesti<span *ngIf="unreadCount$ | async as unread"><span *ngIf="unread > 0" class="notification-dot" [attr.aria-label]="unread + ' nepročitanih obavijesti'"></span></span></span>
+      </a>
 
       <!-- LOGOUT -->
       <a mat-list-item routerLink="/auth/logout" routerLinkActive="active" class="logout-item">
@@ -90,6 +94,10 @@
 
   <!-- MAIN CONTENT -->
   <mat-sidenav-content class="main-content">
+    <header class="admin-topbar">
+      <div class="topbar-title"><span class="topbar-eyebrow">Pharmacy</span><strong>Administratorski panel</strong></div>
+      <div class="topbar-identity"><mat-icon>account_circle</mat-icon><span><strong>{{adminName || 'Administrator'}}</strong><small>Administrator</small></span></div>
+    </header>
     <router-outlet></router-outlet>
   </mat-sidenav-content>
 </mat-sidenav-container>

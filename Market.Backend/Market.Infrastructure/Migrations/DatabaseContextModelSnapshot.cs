@@ -433,6 +433,42 @@ namespace Market.Infrastructure.Migrations
                     b.ToTable("WishlistItems", (string)null);
                 });
 
+            modelBuilder.Entity("Market.Domain.Entities.Communication.AdminNotificationReadStateEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AdminUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifiedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("NotificationId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NotificationId");
+
+                    b.HasIndex("AdminUserId", "NotificationId")
+                        .IsUnique();
+
+                    b.ToTable("AdminNotificationReadStates", (string)null);
+                });
+
             modelBuilder.Entity("Market.Domain.Entities.Communication.ChatMessageEntity", b =>
                 {
                     b.Property<int>("Id")
@@ -912,6 +948,21 @@ namespace Market.Infrastructure.Migrations
                     b.Navigation("Product");
 
                     b.Navigation("Wishlist");
+                });
+
+            modelBuilder.Entity("Market.Domain.Entities.Communication.AdminNotificationReadStateEntity", b =>
+                {
+                    b.HasOne("Market.Domain.Entities.Identity.MarketUserEntity", null)
+                        .WithMany()
+                        .HasForeignKey("AdminUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Market.Domain.Entities.Communication.NotificationEntity", null)
+                        .WithMany()
+                        .HasForeignKey("NotificationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Market.Domain.Entities.Identity.PasswordResetTokenEntity", b =>

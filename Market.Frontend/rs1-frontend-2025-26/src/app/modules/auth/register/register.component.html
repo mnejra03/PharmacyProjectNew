@@ -4,8 +4,9 @@
     <mat-form-field appearance="outline"><mat-label>Ime</mat-label><input matInput formControlName="firstName"><mat-error *ngIf="form.controls.firstName.invalid">Unesite ime.</mat-error></mat-form-field>
     <mat-form-field appearance="outline"><mat-label>Prezime</mat-label><input matInput formControlName="lastName"><mat-error *ngIf="form.controls.lastName.invalid">Unesite prezime.</mat-error></mat-form-field>
     <mat-form-field appearance="outline"><mat-label>Email</mat-label><input matInput type="email" formControlName="email"><mat-error *ngIf="form.controls.email.invalid">Unesite ispravnu email adresu.</mat-error></mat-form-field>
-    <mat-form-field appearance="outline"><mat-label>Telefon (opcionalno)</mat-label><input matInput formControlName="phoneNumber"></mat-form-field>
+    <mat-form-field appearance="outline"><mat-label>Telefon (opcionalno)</mat-label><input matInput type="tel" inputmode="numeric" autocomplete="tel" formControlName="phoneNumber"><mat-error *ngIf="form.controls.phoneNumber.hasError('pattern')">Unesite ispravan broj telefona.</mat-error></mat-form-field>
     <mat-form-field appearance="outline"><mat-label>Lozinka</mat-label><input matInput type="password" formControlName="password"><mat-error *ngIf="form.controls.password.invalid">Lozinka mora imati najmanje 8 znakova.</mat-error></mat-form-field>
+    <div class="password-strength" aria-live="polite"><div class="strength-track"><span [style.width.%]="passwordStrength * 20" [class]="'strength-fill strength-' + passwordStrength"></span></div><small>Jačina lozinke: <strong>{{passwordStrengthLabel}}</strong>. Koristite velika i mala slova, broj i simbol.</small></div>
     <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
     <button mat-raised-button color="primary" type="submit" [disabled]="submitting">{{ submitting ? 'Registracija…' : 'Registruj se' }}</button>
   </form>

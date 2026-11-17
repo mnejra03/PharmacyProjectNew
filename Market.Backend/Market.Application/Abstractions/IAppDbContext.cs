@@ -7,6 +7,7 @@ public interface IAppDbContext
     DbSet<PasswordResetTokenEntity> PasswordResetTokens { get; }
     DbSet<ChatMessageEntity> ChatMessages { get; }
     DbSet<NotificationEntity> Notifications { get; }
+    DbSet<AdminNotificationReadStateEntity> AdminNotificationReadStates { get; }
     DbSet<RecipeEntity> Recipes { get; }
     DbSet<AdvertisementEntity> Advertisements { get; }
     DbSet<ProductEntity> Products { get; }

@@ -7,29 +7,32 @@ import { ToasterService } from '../../../core/services/toaster.service';
 
 @Component({selector:'app-catalog',standalone:false,template:`
 <section class="page catalog-page">
-  <div class="catalog-heading"><div><h1>Proizvodi apoteke</h1><p>Pronađite proizvode po kategoriji, brendu ili nazivu.</p></div><a mat-stroked-button routerLink="/">Početna</a></div>
+  <div class="catalog-heading"><div><h1>Proizvodi apoteke</h1><p>Pronađite proizvode po kategoriji, brendu ili nazivu.</p></div><div><button mat-stroked-button type="button" (click)="startTour()">Vodič kroz katalog</button> <a mat-stroked-button routerLink="/">Početna</a></div></div>
+  <aside class="catalog-tour" *ngIf="tourStep" role="dialog" aria-live="polite"><strong>Vodič {{tourStep}}/3</strong><p>{{tourText}}</p><div><button mat-button (click)="endTour()">Zatvori</button><button mat-raised-button color="primary" (click)="nextTourStep()">{{tourStep===3?'Završi':'Dalje'}}</button></div></aside>
   <div class="catalog-filters" [formGroup]="filters">
-    <mat-form-field appearance="outline"><mat-label>Pretraži proizvode</mat-label><input matInput formControlName="search" (input)="load()" placeholder="Naziv ili opis"></mat-form-field>
+    <mat-form-field appearance="outline"><mat-label>Pretraži proizvode</mat-label><input matInput formControlName="search" (input)="load()" [matAutocomplete]="productSuggestions" placeholder="Naziv ili opis"><mat-autocomplete #productSuggestions="matAutocomplete" (optionSelected)="selectSuggestion($event.option.value)"><mat-option *ngFor="let suggestion of suggestions" [value]="suggestion.name"><span class="suggestion-label"><strong>{{suggestion.name}}</strong><small>{{suggestionDescription(suggestion)}}</small></span></mat-option></mat-autocomplete></mat-form-field>
     <mat-form-field appearance="outline"><mat-label>Kategorija</mat-label><mat-select formControlName="categoryId" (selectionChange)="load()"><mat-option [value]="null">Sve kategorije</mat-option><mat-option *ngFor="let c of categories" [value]="c.id">{{c.name}}</mat-option></mat-select></mat-form-field>
     <mat-form-field appearance="outline"><mat-label>Brend</mat-label><mat-select formControlName="brandId" (selectionChange)="load()"><mat-option [value]="null">Svi brendovi</mat-option><mat-option *ngFor="let b of brands" [value]="b.id">{{b.name}}</mat-option></mat-select></mat-form-field>
     <mat-checkbox formControlName="discounted" (change)="load()">Samo sniženi</mat-checkbox>
+    <mat-form-field appearance="outline"><mat-label>Sortiranje</mat-label><mat-select [(value)]="sortOption" (selectionChange)="load()"><mat-option value="name-asc">Naziv: A–Ž</mat-option><mat-option value="name-desc">Naziv: Ž–A</mat-option><mat-option value="price-asc">Najniža cijena</mat-option><mat-option value="price-desc">Najviša cijena</mat-option><mat-option value="rating-desc">Najbolje ocijenjeni</mat-option><mat-option value="rating-asc">Najniže ocjene</mat-option><mat-option value="stock-desc">Najviše na stanju</mat-option><mat-option value="stock-asc">Najmanje na stanju</mat-option></mat-select></mat-form-field>
   </div>
   <p class="result-count">Pronađeno proizvoda: {{total}}</p>
   <div class="product-grid" *ngIf="products.length; else empty">
     <mat-card class="product-card" *ngFor="let p of products">
       <a class="product-image" [routerLink]="['/product',p.id]"><img [src]="p.imageUrl" [alt]="p.name" loading="lazy" (error)="imageFallback($event)"></a>
-      <mat-card-content><small>{{p.categoryName}}<ng-container *ngIf="p.brandName"> · {{p.brandName}}</ng-container></small><a class="product-name" [routerLink]="['/product',p.id]">{{p.name}}</a><p class="stock">{{p.quantityInStock > 0 ? 'Dostupno: ' + p.quantityInStock : 'Trenutno nije dostupno'}}</p><div class="price-row"><span [class.discount-price]="p.isDiscounted">{{p.currentPrice | number:'1.2-2'}} KM</span><del *ngIf="p.isDiscounted">{{p.price | number:'1.2-2'}} KM</del></div></mat-card-content>
+      <mat-card-content><small>{{p.categoryName}}<ng-container *ngIf="p.brandName"> · {{p.brandName}}</ng-container></small><small class="search-match" *ngIf="descriptionMatchHint(p)">{{descriptionMatchHint(p)}}</small><a class="product-name" [routerLink]="['/product',p.id]">{{p.name}}</a><p class="stock">{{p.quantityInStock > 0 ? 'Dostupno: ' + p.quantityInStock : 'Trenutno nije dostupno'}}</p><div class="price-row"><span [class.discount-price]="p.isDiscounted">{{p.currentPrice | number:'1.2-2'}} KM</span><del *ngIf="p.isDiscounted">{{p.price | number:'1.2-2'}} KM</del></div></mat-card-content>
       <mat-card-actions><button mat-raised-button color="primary" (click)="add(p)" [disabled]="p.quantityInStock<1">Dodaj u korpu</button><button mat-icon-button aria-label="Dodaj u favorite" (click)="favorite(p)"><mat-icon>favorite_border</mat-icon></button></mat-card-actions>
     </mat-card>
   </div>
   <ng-template #empty><div class="empty-state">Nema proizvoda za odabrane kriterije.</div></ng-template>
   <div class="catalog-pagination"><button mat-button (click)="changePage(-1)" [disabled]="page<=1">Prethodna</button><span>Stranica {{page}} od {{totalPages}}</span><button mat-button (click)="changePage(1)" [disabled]="page>=totalPages">Sljedeća</button></div>
 </section>`,styles:[`
-  .catalog-page { max-width: 1440px; margin: auto; }
+  .catalog-page { max-width: 1440px; margin: auto; }.catalog-tour{position:sticky;top:1rem;z-index:5;max-width:420px;margin:0 0 1rem auto;padding:1rem 1.25rem;border:1px solid #a9c7ad;border-radius:12px;background:#f2fbf3;box-shadow:0 8px 24px #173e2720}.catalog-tour p{margin:.45rem 0}.catalog-tour>div{display:flex;justify-content:flex-end;gap:.5rem}
   .catalog-heading { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.25rem; }
   .catalog-heading h1 { margin-bottom:.25rem; } .catalog-heading p { margin:0; }
-  .catalog-filters { display:grid; grid-template-columns:2fr 1fr 1fr auto; align-items:center; gap:1rem; padding:1rem; border:1px solid #dce6df; border-radius:12px; background:#fff; }
+  .catalog-filters { display:grid; grid-template-columns:minmax(220px,2fr) repeat(2,minmax(145px,1fr)) auto minmax(200px,1.35fr); align-items:center; gap:1rem; padding:1rem; border:1px solid #dce6df; border-radius:12px; background:#fff; }
   .catalog-filters mat-form-field { width:100%; margin:0; } .result-count { color:#43584a; }
+  .suggestion-label{display:grid;gap:2px;line-height:1.25}.suggestion-label small,.search-match{color:#65756f;font-size:.76rem;line-height:1.35}.search-match{display:block;margin:.2rem 0 .35rem;font-style:italic}
   .product-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,260px)); justify-content:center; gap:1.25rem; }
   .product-card { display:flex; flex-direction:column; min-width:0; overflow:hidden; padding:0; border:1px solid #dce6df; border-radius:12px; background:#fff; color:#172b24; }
   .product-image { display:grid; place-items:center; height:210px; padding:1rem; background:#fff; }
@@ -46,15 +49,21 @@ import { ToasterService } from '../../../core/services/toaster.service';
 ` ]})
 export class CatalogComponent implements OnInit {
   private api=inject(StoreApiService); private fb=inject(FormBuilder); private auth=inject(AuthFacadeService); private toaster=inject(ToasterService); private route=inject(ActivatedRoute);
-  products:Product[]=[]; categories:ProductCategory[]=[]; brands:ProductBrand[]=[]; search=''; categoryId?:number; brandId?:number; discounted=false; filters=this.fb.group({search:['',[Validators.maxLength(120)]],categoryId:[null as number|null],brandId:[null as number|null],discounted:[false]}); page=1; total=0; totalPages=1;
+  products:Product[]=[]; categories:ProductCategory[]=[]; brands:ProductBrand[]=[]; suggestions:Product[]=[]; search=''; categoryId?:number; brandId?:number; discounted=false; sortOption='name-asc';tourStep=0; private suggestionTimer?:ReturnType<typeof setTimeout>; filters=this.fb.group({search:['',[Validators.maxLength(120)]],categoryId:[null as number|null],brandId:[null as number|null],discounted:[false]}); page=1; total=0; totalPages=1;
+  get tourText(){return this.tourStep===1?'Unesite naziv ili dio opisa. Prijedlozi se učitavaju sa servera dok kucate.':this.tourStep===2?'Sužite rezultate odabirom kategorije, brenda ili sniženih proizvoda.':this.tourStep===3?'Promijenite redoslijed po nazivu, cijeni, ocjeni ili dostupnosti i otvorite proizvod za detalje.':'';}
+  startTour(){this.tourStep=1;} endTour(){this.tourStep=0;} nextTourStep(){if(this.tourStep>=3)this.endTour();else this.tourStep++;}
   ngOnInit(){
     this.api.getCategories().subscribe(x=>{this.categories=x;this.applyQuery(this.route.snapshot.queryParamMap.get('category'),this.route.snapshot.queryParamMap.get('brandId'));});
     this.api.getBrands().subscribe(x=>{this.brands=x;this.applyQuery(this.route.snapshot.queryParamMap.get('category'),this.route.snapshot.queryParamMap.get('brandId'));});
     this.route.queryParamMap.subscribe(params=>this.applyQuery(params.get('category'),params.get('brandId')));
   }
   private applyQuery(categoryName:string|null,brandValue:string|null){const categoryId=categoryName?this.categories.find(c=>c.name===categoryName)?.id:undefined;const brandId=brandValue?Number(brandValue):undefined;if(categoryId!==this.categoryId||brandId!==this.brandId){this.filters.patchValue({categoryId:categoryId??null,brandId:brandId??null},{emitEvent:false});this.categoryId=categoryId;this.brandId=brandId;this.load();}else if(!this.products.length){this.load();}}
-  load(){const values=this.filters.getRawValue();this.search=values.search??'';this.categoryId=values.categoryId??undefined;this.brandId=values.brandId??undefined;this.discounted=values.discounted??false;this.page=1;this.fetch();}
-  fetch(){this.api.getProducts({search:this.search||undefined,categoryId:this.categoryId,brandId:this.brandId,discounted:this.discounted||undefined,page:this.page,pageSize:12}).subscribe(x=>{this.products=x.items;this.total=x.totalItems;this.totalPages=Math.max(1,x.totalPages);});}
+  load(){const values=this.filters.getRawValue();this.search=values.search??'';this.categoryId=values.categoryId??undefined;this.brandId=values.brandId??undefined;this.discounted=values.discounted??false;this.page=1;this.fetch();this.loadSuggestions(this.search);}
+  descriptionMatchHint(product:Product):string{const term=this.search.trim();if(!term||product.name.toLocaleLowerCase().includes(term.toLocaleLowerCase()))return '';const description=product.description??'';const index=description.toLocaleLowerCase().indexOf(term.toLocaleLowerCase());if(index<0)return '';const start=Math.max(0,index-24),end=Math.min(description.length,index+term.length+32);return `Podudaranje u opisu: ${start>0?'…':''}${description.slice(start,end).trim()}${end<description.length?'…':''}`;}
+  suggestionDescription(product:Product):string{const match=this.descriptionMatchHint(product);if(match)return match;const description=(product.description??'').trim();if(!description)return 'Opis nije dostupan';return `Opis: ${description.length>100?description.slice(0,100).trimEnd()+'…':description}`;}
+  private loadSuggestions(value:string){if(this.suggestionTimer)clearTimeout(this.suggestionTimer);if(value.trim().length<2){this.suggestions=[];return;}this.suggestionTimer=setTimeout(()=>this.api.getProducts({search:value.trim(),page:1,pageSize:5,sortBy:'name'}).subscribe(result=>this.suggestions=result.items),250);}
+  selectSuggestion(name:string){this.filters.controls.search.setValue(name,{emitEvent:false});this.load();}
+  fetch(){const [sortBy,direction]=this.sortOption.split('-');this.api.getProducts({search:this.search||undefined,categoryId:this.categoryId,brandId:this.brandId,discounted:this.discounted||undefined,page:this.page,pageSize:12,sortBy,sortDescending:direction==='desc'}).subscribe(x=>{this.products=x.items;this.total=x.totalItems;this.totalPages=Math.max(1,x.totalPages);});}
   changePage(delta:number){this.page+=delta;this.fetch();window.scrollTo({top:0,behavior:'smooth'});}
   imageFallback(event:Event){(event.target as HTMLImageElement).src='/images/product-placeholder.svg';}
   add(p:Product){if(!this.auth.isAuthenticated()){this.toaster.error('Prijavite se da biste dodali proizvod u korpu.');return;}this.api.addToCart(p.id).subscribe({next:()=>this.toaster.success('Proizvod je dodan u korpu.'),error:()=>this.toaster.error('Proizvod nije moguće dodati u korpu.')});}

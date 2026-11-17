@@ -521,3 +521,68 @@ $sidebar-width: 280px;
   animation: slideIn 0.3s ease-out;
 }
 
+.admin-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  min-height: 72px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .75rem clamp(1rem, 2.5vw, 2rem);
+  border-bottom: 1px solid #dce6df;
+  background: rgba(255, 255, 255, .97);
+  box-shadow: 0 2px 8px rgba(23, 62, 39, .06);
+}
+
+.topbar-title,
+.topbar-identity > span {
+  display: grid;
+  gap: .15rem;
+}
+
+.topbar-title strong { color: #174d2b; font-size: 1.05rem; }
+.topbar-eyebrow { color: #64746e; font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.topbar-identity { display: flex; align-items: center; gap: .65rem; color: #174d2b; }
+.topbar-identity mat-icon { width: 34px; height: 34px; font-size: 34px; }
+.topbar-identity strong { color: #173e27; font-size: .95rem; }
+.topbar-identity small { color: #65756f; font-size: .78rem; }
+
+@media(max-width:560px) {
+  .admin-topbar { min-height: 64px; padding: .6rem .75rem; }
+  .topbar-title strong { font-size: .9rem; }
+  .topbar-identity { gap: .35rem; }
+  .topbar-identity strong { max-width: 125px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+// Keep admin navigation labels and actions centered within the sidebar.
+.sidenav mat-nav-list {
+  text-align: center;
+}
+
+.sidenav mat-nav-list .nav-section-title {
+  text-align: center;
+}
+
+.sidenav mat-nav-list a[mat-list-item] {
+  justify-content: center;
+  text-align: center;
+}
+
+.sidenav .notification-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-left: 8px;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  background: #ef2929;
+  box-shadow: 0 0 0 2px #ef292933;
+  vertical-align: middle;
+}
+
+:host ::ng-deep .sidenav mat-nav-list a[mat-list-item] .mdc-list-item__content {
+  justify-content: center;
+}
+

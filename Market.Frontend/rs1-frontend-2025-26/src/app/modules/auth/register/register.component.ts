@@ -14,9 +14,14 @@ export class RegisterComponent {
     firstName: ['', [Validators.required, Validators.maxLength(100)]],
     lastName: ['', [Validators.required, Validators.maxLength(100)]],
     email: ['', [Validators.required, Validators.email, Validators.maxLength(200)]],
-    phoneNumber: ['', [Validators.maxLength(30)]],
+    phoneNumber: ['', [Validators.maxLength(30), Validators.pattern(/^(?:(?:060\d{7}|06[1-9]\d{6})|\+?387(?:60\d{7}|6[1-9]\d{6}))$/)]],
     password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(100)]]
   });
+  get passwordStrength(): number {
+    const value = this.form.controls.password.value ?? '';
+    return [value.length >= 8, /[A-Z]/.test(value), /[a-z]/.test(value), /\d/.test(value), /[^A-Za-z0-9]/.test(value)].filter(Boolean).length;
+  }
+  get passwordStrengthLabel(): string { return ['Unesite lozinku', 'Vrlo slaba', 'Slaba', 'Srednja', 'Dobra', 'Jaka'][this.passwordStrength]; }
   submit(): void {
     if (this.form.invalid || this.submitting) { this.form.markAllAsTouched(); return; }
     this.submitting = true; this.errorMessage = '';

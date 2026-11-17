@@ -143,13 +143,15 @@ public sealed class CheckoutHandler(IAppDbContext db, IAppCurrentUser user, IStr
             product.QuantityInStock -= item.Quantity; order.TotalPrice += price * item.Quantity;
         }
         db.Orders.Add(order); cart.IsCompleted = true;
+        // Persist first so the database-generated order ID is available in notifications.
+        await db.SaveChangesAsync(ct);
         var notifications = new List<NotificationEntity>
         {
-            new() { UserId = customer.Id, Title = "Narudzba je zaprimljena", Message = $"Vasa narudzba #{order.Id} je zaprimljena i ceka obradu.", Type = "order_status", CreatedAt = DateTime.UtcNow }
+            new() { UserId = customer.Id, Title = "Narudžba je zaprimljena", Message = $"Vaša narudžba #{order.Id} je zaprimljena i čeka obradu.", Type = "order_status", CreatedAt = DateTime.UtcNow }
         };
         var staff = await db.Users.Where(x => x.IsEnabled && (x.IsAdmin || x.IsPharmacist)).ToListAsync(ct);
         foreach (var member in staff)
-            notifications.Add(new NotificationEntity { UserId = member.Id, SenderId = customer.Id, Title = "Nova narudzba", Message = $"Kupac {customer.FirstName} {customer.LastName} poslao je narudzbu #{order.Id}.", Type = "order_status", CreatedAt = DateTime.UtcNow });
+            notifications.Add(new NotificationEntity { UserId = member.Id, SenderId = customer.Id, Title = "Nova narudžba", Message = $"Kupac {customer.FirstName} {customer.LastName} poslao/la je narudžbu #{order.Id}.", Type = "order_status", CreatedAt = DateTime.UtcNow });
         db.Notifications.AddRange(notifications);
         await db.SaveChangesAsync(ct);
         foreach (var notification in notifications)

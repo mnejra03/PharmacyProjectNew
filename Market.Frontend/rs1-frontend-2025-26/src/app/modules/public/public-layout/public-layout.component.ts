@@ -46,6 +46,22 @@ export class PublicLayoutComponent implements OnInit {
     });
   }
 
+  searchDescription(product: Product): { before: string; matchedText: string; after: string } {
+    const query = this.searchControl.value.trim();
+    const description = product.description ?? '';
+    const index = query ? description.toLocaleLowerCase().indexOf(query.toLocaleLowerCase()) : -1;
+    if (index >= 0) {
+      const start = Math.max(0, index - 24);
+      const end = Math.min(description.length, index + query.length + 32);
+      return {
+        before: `${start > 0 ? '…' : ''}${description.slice(start, index)}`,
+        matchedText: description.slice(index, index + query.length),
+        after: `${description.slice(index + query.length, end).trimEnd()}${end < description.length ? '…' : ''}`
+      };
+    }
+    return { before: description ? description.length > 100 ? description.slice(0, 100).trimEnd() + '…' : description : 'Opis nije dostupan', matchedText: '', after: '' };
+  }
+
   goToProduct(productId: number): void {
     void this.router.navigate(['/product', productId]);
     this.searchControl.setValue('');
