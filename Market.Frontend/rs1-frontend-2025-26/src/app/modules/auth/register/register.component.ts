@@ -29,6 +29,17 @@ export class RegisterComponent {
       firstName: this.form.value.firstName ?? '', lastName: this.form.value.lastName ?? '',
       email: this.form.value.email ?? '', phoneNumber: this.form.value.phoneNumber,
       password: this.form.value.password ?? ''
-    }).subscribe({ next: () => { this.submitting = false; this.router.navigate(['/client']); }, error: () => { this.submitting = false; this.errorMessage = 'Registracija nije uspjela. Provjerite podatke i pokušajte ponovo.'; } });
+    }).subscribe({
+      next: () => { this.submitting = false; this.router.navigate(['/client']); },
+      error: (error: any) => {
+        this.submitting = false;
+        const apiMessage = error?.error?.message ?? error?.error?.Message;
+        this.errorMessage = error?.status === 409 && typeof apiMessage === 'string'
+          ? apiMessage
+          : error?.status === 409
+            ? 'E-mail adresa je već povezana s postojećim ili ranije uklonjenim računom.'
+            : 'Registracija nije uspjela. Provjerite podatke i pokušajte ponovo.';
+      }
+    });
   }
 }

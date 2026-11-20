@@ -17,7 +17,7 @@ public sealed class SaveProductValidator : AbstractValidator<SaveProductCommand>
         RuleFor(x => x.QuantityInStock).GreaterThanOrEqualTo(0);
         RuleFor(x => x.ImageUrl).NotEmpty().MaximumLength(1000);
         RuleFor(x => x.CategoryId).GreaterThan(0);
-        RuleFor(x => x.DiscountPercentage).NotNull().InclusiveBetween(0.01m, 99.99m).When(x => x.IsDiscounted);
+        RuleFor(x => x.DiscountPercentage).NotNull().WithMessage("Unesite procenat sniženja.").InclusiveBetween(0.01m, 99.99m).WithMessage("Procenat sniženja mora biti između 0,01% i 99,99%.").When(x => x.IsDiscounted);
     }
 }
 
@@ -71,6 +71,9 @@ public sealed class SaveProductHandler(IAppDbContext db, IAppCurrentUser user) :
     {
         if (!user.IsAdmin && !user.IsPharmacist) throw new MarketConflictException("Samo administrator ili farmaceut može uređivati proizvode.");
         if (!await db.ProductCategories.AnyAsync(c => c.Id == request.CategoryId, ct)) throw new MarketNotFoundException("Kategorija nije pronađena.");
+        if (request.BrandId.HasValue && !await db.Brands.AnyAsync(b => b.Id == request.BrandId.Value, ct)) throw new MarketNotFoundException("Odabrani brend nije pronađen.");
+        if (request.IsDiscounted && (!request.DiscountPercentage.HasValue || request.DiscountPercentage.Value is < 0.01m or > 99.99m))
+            throw new MarketConflictException("Za sniženi proizvod unesite procenat između 0,01% i 99,99%.");
         var entity = request.Id.HasValue ? await db.Products.FirstOrDefaultAsync(p => p.Id == request.Id.Value, ct) : null;
         if (request.Id.HasValue && entity is null) throw new MarketNotFoundException("Proizvod nije pronađen.");
         entity ??= new ProductEntity();

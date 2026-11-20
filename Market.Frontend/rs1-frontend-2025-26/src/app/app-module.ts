@@ -1,4 +1,6 @@
-import { NgModule, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
+import { NgModule, provideBrowserGlobalErrorListeners, provideZoneChangeDetection, LOCALE_ID } from '@angular/core';
+import { DATE_PIPE_DEFAULT_OPTIONS, registerLocaleData } from '@angular/common';
+import localeBs from '@angular/common/locales/bs';
 import { BrowserModule } from '@angular/platform-browser';
 import { provideAnimations} from '@angular/platform-browser/animations';
 import {HttpClient, provideHttpClient, withInterceptors} from '@angular/common/http';
@@ -12,6 +14,8 @@ import {TranslateLoader, TranslateModule} from '@ngx-translate/core';
 import {CustomTranslateLoader} from './core/services/custom-translate-loader';
 import {materialModules} from './modules/shared/material-modules';
 import {SharedModule} from './modules/shared/shared-module';
+
+registerLocaleData(localeBs, 'bs-BA');
 
 @NgModule({
   declarations: [
@@ -31,6 +35,8 @@ import {SharedModule} from './modules/shared/shared-module';
     materialModules,
   ],
   providers: [
+    { provide: LOCALE_ID, useValue: 'bs-BA' },
+    { provide: DATE_PIPE_DEFAULT_OPTIONS, useValue: { timezone: 'Europe/Sarajevo' } },
     provideAnimations(),
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection(),

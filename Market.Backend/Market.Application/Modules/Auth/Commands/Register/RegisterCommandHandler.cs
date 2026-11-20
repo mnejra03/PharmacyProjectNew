@@ -1,5 +1,6 @@
 using Market.Application.Modules.Auth.Commands.Login;
 using Market.Application.Modules.Auth.Commands.Register;
+using Microsoft.EntityFrameworkCore;
 
 public sealed class RegisterCommandHandler(
     IAppDbContext ctx,
@@ -10,8 +11,9 @@ public sealed class RegisterCommandHandler(
     public async Task<LoginCommandDto> Handle(RegisterCommand request, CancellationToken ct)
     {
         var email = request.Email.Trim().ToLowerInvariant();
-        if (await ctx.Users.AnyAsync(x => x.Email.ToLower() == email, ct))
-            throw new MarketConflictException("Korisnik sa ovom email adresom već postoji.");
+        var existingUser = await FindByEmailAsync(email, ct);
+        if (existingUser is not null)
+            throw CreateEmailConflict(existingUser);
 
         var user = new MarketUserEntity
         {
@@ -24,7 +26,18 @@ public sealed class RegisterCommandHandler(
         };
         user.PasswordHash = hasher.HashPassword(user, request.Password);
         ctx.Users.Add(user);
-        await ctx.SaveChangesAsync(ct);
+        try
+        {
+            await ctx.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException)
+        {
+            // The unique index remains the final guard if two registrations race.
+            existingUser = await FindByEmailAsync(email, ct);
+            if (existingUser is not null)
+                throw CreateEmailConflict(existingUser);
+            throw;
+        }
 
         var tokens = jwt.IssueTokens(user);
         ctx.RefreshTokens.Add(new RefreshTokenEntity
@@ -42,4 +55,13 @@ public sealed class RegisterCommandHandler(
             ExpiresAtUtc = tokens.AccessTokenExpiresAtUtc
         };
     }
+
+    private Task<MarketUserEntity?> FindByEmailAsync(string email, CancellationToken ct) =>
+        ctx.Users.IgnoreQueryFilters().AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Email.ToLower() == email, ct);
+
+    private static MarketConflictException CreateEmailConflict(MarketUserEntity user) =>
+        user.IsDeleted
+            ? new MarketConflictException("Račun s ovom e-mail adresom je ranije uklonjen. Ponovna registracija s istom adresom nije moguća.")
+            : new MarketConflictException("Korisnik sa ovom e-mail adresom već postoji.");
 }

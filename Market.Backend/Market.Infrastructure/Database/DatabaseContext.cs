@@ -20,6 +20,7 @@ public partial class DatabaseContext : DbContext, IAppDbContext
     public DbSet<CartItemEntity> CartItems => Set<CartItemEntity>();
     public DbSet<OrderEntity> Orders => Set<OrderEntity>();
     public DbSet<OrderItemEntity> OrderItems => Set<OrderItemEntity>();
+    public DbSet<PaymentIntentReservationEntity> PaymentIntentReservations => Set<PaymentIntentReservationEntity>();
     public DbSet<WishlistEntity> Wishlists => Set<WishlistEntity>();
     public DbSet<WishlistItemEntity> WishlistItems => Set<WishlistItemEntity>();
 

@@ -18,6 +18,7 @@ public interface IAppDbContext
     DbSet<CartItemEntity> CartItems { get; }
     DbSet<OrderEntity> Orders { get; }
     DbSet<OrderItemEntity> OrderItems { get; }
+    DbSet<PaymentIntentReservationEntity> PaymentIntentReservations { get; }
     DbSet<WishlistEntity> Wishlists { get; }
     DbSet<WishlistItemEntity> WishlistItems { get; }
     Task<int> SaveChangesAsync(CancellationToken ct);

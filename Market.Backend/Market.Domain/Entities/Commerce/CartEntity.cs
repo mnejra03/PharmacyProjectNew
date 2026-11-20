@@ -47,6 +47,20 @@ public sealed class OrderItemEntity : BaseEntity
     public decimal UnitPrice { get; set; }
 }
 
+public sealed class PaymentIntentReservationEntity : BaseEntity
+{
+    public string PaymentIntentId { get; set; } = string.Empty;
+    public int UserId { get; set; }
+    public MarketUserEntity? User { get; set; }
+    public int CartId { get; set; }
+    public CartEntity? Cart { get; set; }
+    public string CartFingerprint { get; set; } = string.Empty;
+    public long AmountMinor { get; set; }
+    public string Currency { get; set; } = "bam";
+    public int? OrderId { get; set; }
+    public OrderEntity? Order { get; set; }
+}
+
 public sealed class WishlistEntity : BaseEntity
 {
     public int UserId { get; set; }

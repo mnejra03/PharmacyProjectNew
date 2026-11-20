@@ -323,6 +323,10 @@ namespace Market.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("PaymentReference")
+                        .IsUnique()
+                        .HasFilter("[PaymentReference] IS NOT NULL");
+
                     b.HasIndex("UserId");
 
                     b.ToTable("Orders", (string)null);
@@ -370,6 +374,66 @@ namespace Market.Infrastructure.Migrations
                     b.HasIndex("ProductId");
 
                     b.ToTable("OrderItems", (string)null);
+                });
+
+            modelBuilder.Entity("Market.Domain.Entities.Commerce.PaymentIntentReservationEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<long>("AmountMinor")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("CartFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<int>("CartId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifiedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PaymentIntentId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CartId");
+
+                    b.HasIndex("OrderId")
+                        .IsUnique()
+                        .HasFilter("[OrderId] IS NOT NULL");
+
+                    b.HasIndex("PaymentIntentId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PaymentIntentReservations", (string)null);
                 });
 
             modelBuilder.Entity("Market.Domain.Entities.Commerce.WishlistEntity", b =>
@@ -918,6 +982,32 @@ namespace Market.Infrastructure.Migrations
                     b.Navigation("Order");
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("Market.Domain.Entities.Commerce.PaymentIntentReservationEntity", b =>
+                {
+                    b.HasOne("Market.Domain.Entities.Commerce.CartEntity", "Cart")
+                        .WithMany()
+                        .HasForeignKey("CartId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Market.Domain.Entities.Commerce.OrderEntity", "Order")
+                        .WithOne()
+                        .HasForeignKey("Market.Domain.Entities.Commerce.PaymentIntentReservationEntity", "OrderId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Market.Domain.Entities.Identity.MarketUserEntity", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Cart");
+
+                    b.Navigation("Order");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Market.Domain.Entities.Commerce.WishlistEntity", b =>

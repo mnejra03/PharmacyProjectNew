@@ -12,7 +12,7 @@ export interface Cart { items:CartItem[]; total:number; itemCount:number; }
 export interface OrderItem { productId:number; name:string; quantity:number; unitPrice:number; }
 export interface PharmacyOrder { id:number; orderedAtUtc:string; status:string; totalPrice:number; paymentMethod:string; shippingAddress:string; customerName:string; customerEmail:string; items:OrderItem[]; }
 export interface PharmacySupplyOrder { id:number; orderedAtUtc:string; status:string; totalPrice:number; pharmacistName:string; pharmacistEmail:string; items:OrderItem[]; }
-export interface CartPaymentIntent { paymentIntentId:string; clientSecret:string; publishableKey:string; amount:number; currency:string; }
+export interface CartPaymentIntent { paymentIntentId:string; clientSecret:string; publishableKey:string; amount:number; currency:string; alreadyPaid:boolean; }
 export interface ProductReview { id:number; userName:string; rating:number; text:string; createdAtUtc:string; }
 export interface SaveProduct { name:string; description:string; price:number; quantityInStock:number; imageUrl:string; categoryId:number; brandId?:number; isDiscounted:boolean; discountPercentage?:number; expiryDate?:string; }
 

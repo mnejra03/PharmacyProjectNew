@@ -1,6 +1,8 @@
 ﻿using Market.Domain.Entities.Commerce;
 using Market.Domain.Entities.Communication;
 using Market.Application.Modules.Communication.Notifications;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Market.Application.Modules.Catalog;
 
@@ -15,7 +17,7 @@ public sealed record RemoveCartItemCommand(int Id) : IRequest;
 public sealed class RemoveCartItemValidator : AbstractValidator<RemoveCartItemCommand> { public RemoveCartItemValidator() => RuleFor(x => x.Id).GreaterThan(0); }
 public sealed record CheckoutCommand(string ShippingAddress, string PaymentMethod, string? PaymentReference = null) : IRequest<OrderDto>;
 public sealed record CreateCartPaymentIntentCommand : IRequest<CartPaymentIntentDto>;
-public sealed record CartPaymentIntentDto(string PaymentIntentId, string ClientSecret, string PublishableKey, decimal Amount, string Currency);
+public sealed record CartPaymentIntentDto(string PaymentIntentId, string ClientSecret, string PublishableKey, decimal Amount, string Currency, bool AlreadyPaid = false);
 public sealed record OrderItemDto(int ProductId, string Name, int Quantity, decimal UnitPrice);
 public sealed record OrderDto(int Id, DateTime OrderedAtUtc, string Status, decimal TotalPrice, string PaymentMethod, string ShippingAddress, string CustomerName, string CustomerEmail, IReadOnlyList<OrderItemDto> Items, bool IsSupplyOrder = false);
 public sealed record GetOrdersQuery(bool All = false) : IRequest<IReadOnlyList<OrderDto>>;
@@ -105,10 +107,27 @@ public sealed class CreateCartPaymentIntentHandler(IAppDbContext db, IAppCurrent
         var items = cart.Items.Where(i => !i.SavedForLater).ToList();
         if (items.Count == 0) throw new MarketConflictException("Korpa je prazna.");
         foreach (var item in items)
+        {
+            CommerceRules.EnsureProductNotExpired(item.Product);
             if (item.Product is null || item.Product.QuantityInStock < item.Quantity) throw new MarketConflictException("Jedan ili više proizvoda više nisu dostupni u traženoj količini.");
+        }
         var total = items.Sum(i => GetCartHandler.CurrentPrice(i.Product!) * i.Quantity);
         var amountMinor = decimal.ToInt64(decimal.Round(total * 100m, 0, MidpointRounding.AwayFromZero));
+        var fingerprint = CommerceRules.CartFingerprint(cart, items);
+        var existing = await db.PaymentIntentReservations.FirstOrDefaultAsync(x => x.UserId == userId && x.CartId == cart.Id && x.CartFingerprint == fingerprint && x.OrderId == null, ct);
+        if (existing is not null)
+        {
+            var priorIntent = await stripe.GetIntentAsync(existing.PaymentIntentId, ct);
+            if (priorIntent is not null && priorIntent.AmountMinor == amountMinor && priorIntent.Currency == "bam")
+                return new(priorIntent.Id, priorIntent.ClientSecret, stripe.PublishableKey, total, priorIntent.Currency, priorIntent.Status == "succeeded");
+        }
         var intent = await stripe.CreateIntentAsync(amountMinor, "bam", userId.ToString(), ct);
+        db.PaymentIntentReservations.Add(new PaymentIntentReservationEntity
+        {
+            PaymentIntentId = intent.Id, UserId = userId, CartId = cart.Id,
+            CartFingerprint = fingerprint, AmountMinor = amountMinor, Currency = "bam", CreatedAtUtc = DateTime.UtcNow
+        });
+        await db.SaveChangesAsync(ct);
         return new(intent.Id, intent.ClientSecret, stripe.PublishableKey, total, intent.Currency);
     }
 }
@@ -117,27 +136,43 @@ public sealed class CheckoutHandler(IAppDbContext db, IAppCurrentUser user, IStr
 {
     public async Task<OrderDto> Handle(CheckoutCommand request, CancellationToken ct)
     {
+        if (user.UserId is not int userId) throw new MarketConflictException("Prijava je obavezna.");
+        if (request.PaymentMethod == "Card" && !string.IsNullOrWhiteSpace(request.PaymentReference))
+        {
+            var existingOrder = await db.Orders.AsNoTracking().Include(o => o.Items).Include(o => o.User)
+                .FirstOrDefaultAsync(o => o.PaymentReference == request.PaymentReference, ct);
+            if (existingOrder is not null)
+            {
+                if (existingOrder.UserId != userId) throw new MarketConflictException("Ova potvrda plaćanja pripada drugom korisniku.");
+                return MapOrder(existingOrder);
+            }
+        }
+        if (request.PaymentMethod != "Card" && !string.IsNullOrWhiteSpace(request.PaymentReference))
+            throw new MarketConflictException("Referenca kartičnog plaćanja ne može se koristiti uz plaćanje pouzećem.");
         var cart = await GetCartHandler.GetActiveCart(db, user, ct);
         var items = cart.Items.Where(i => !i.SavedForLater).ToList();
         if (items.Count == 0) throw new MarketConflictException("Korpa je prazna.");
         foreach (var item in items)
         {
+            CommerceRules.EnsureProductNotExpired(item.Product);
             if (item.Product is null || item.Product.QuantityInStock < item.Quantity) throw new MarketConflictException($"Proizvod {item.Product?.Name ?? item.ProductId.ToString()} više nije dostupan u traženoj količini.");
         }
         var totalDue = items.Sum(i => GetCartHandler.CurrentPrice(i.Product!) * i.Quantity);
+        PaymentIntentReservationEntity? paymentReservation = null;
         if (request.PaymentMethod == "Card")
         {
             if (string.IsNullOrWhiteSpace(request.PaymentReference)) throw new MarketConflictException("Kartično plaćanje nije potvrđeno.");
-            if (await db.Orders.AnyAsync(o => o.PaymentReference == request.PaymentReference, ct))
-                throw new MarketConflictException("Ova potvrda kartičnog plaćanja već je iskorištena za drugu narudžbu.");
+            paymentReservation = await db.PaymentIntentReservations.FirstOrDefaultAsync(x => x.PaymentIntentId == request.PaymentReference, ct);
+            if (paymentReservation is null || paymentReservation.UserId != userId || paymentReservation.CartId != cart.Id || paymentReservation.CartFingerprint != CommerceRules.CartFingerprint(cart, items))
+                throw new MarketConflictException("Kartična naplata nije pripremljena za trenutnu korpu. Pregledajte korpu i pripremite novo plaćanje.");
             var payment = await stripe.GetIntentAsync(request.PaymentReference, ct);
             var expectedMinor = decimal.ToInt64(decimal.Round(totalDue * 100m, 0, MidpointRounding.AwayFromZero));
-            if (payment is null || payment.Status != "succeeded" || payment.UserId != user.UserId!.Value.ToString() || payment.Currency != "bam" || payment.AmountMinor != expectedMinor)
+            if (payment is null || payment.Status != "succeeded" || payment.UserId != userId.ToString() || payment.Currency != "bam" || payment.AmountMinor != expectedMinor || paymentReservation.AmountMinor != expectedMinor || paymentReservation.Currency != payment.Currency)
                 throw new MarketConflictException("Stripe ne potvrđuje uspješno plaćanje za ovu korpu.");
         }
-        var customer = await db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == user.UserId, ct)
+        var customer = await db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == userId, ct)
             ?? throw new MarketNotFoundException("Korisnik nije pronađen.");
-        var order = new OrderEntity { UserId = user.UserId!.Value, OrderedAtUtc = DateTime.UtcNow, Status = "Pending", PaymentMethod = request.PaymentMethod, PaymentReference = request.PaymentReference, ShippingAddress = request.ShippingAddress.Trim() };
+        var order = new OrderEntity { UserId = userId, OrderedAtUtc = DateTime.UtcNow, Status = "Pending", PaymentMethod = request.PaymentMethod, PaymentReference = request.PaymentReference, ShippingAddress = request.ShippingAddress.Trim() };
         foreach (var item in items)
         {
             var product = item.Product!; var price = GetCartHandler.CurrentPrice(product);
@@ -145,23 +180,51 @@ public sealed class CheckoutHandler(IAppDbContext db, IAppCurrentUser user, IStr
             product.QuantityInStock -= item.Quantity; order.TotalPrice += price * item.Quantity;
         }
         db.Orders.Add(order); cart.IsCompleted = true;
+        if (paymentReservation is not null) paymentReservation.Order = order;
         // Persist first so the database-generated order ID is available in notifications.
         await db.SaveChangesAsync(ct);
-        var notifications = new List<NotificationEntity>
+        try
         {
-            new() { UserId = customer.Id, Title = "Narudžba je zaprimljena", Message = $"Vaša narudžba #{order.Id} je zaprimljena i čeka obradu.", Type = "order_status", CreatedAt = DateTime.UtcNow }
-        };
-        var staff = await db.Users.Where(x => x.IsEnabled && (x.IsAdmin || x.IsPharmacist)).ToListAsync(ct);
-        foreach (var member in staff)
-            notifications.Add(new NotificationEntity { UserId = member.Id, SenderId = customer.Id, Title = "Nova narudžba", Message = $"Kupac {customer.FirstName} {customer.LastName} poslao/la je narudžbu #{order.Id}.", Type = "order_status", CreatedAt = DateTime.UtcNow });
-        db.Notifications.AddRange(notifications);
-        await db.SaveChangesAsync(ct);
-        foreach (var notification in notifications)
-        {
-        await notifier.SendNotificationAsync(notification.UserId,
-            new NotificationDto(notification.Id, notification.Title, notification.Message, notification.CreatedAt, notification.IsRead, notification.Type, notification.SenderId), ct);
+            var notifications = new List<NotificationEntity>
+            {
+                new() { UserId = customer.Id, Title = "Narudžba je zaprimljena", Message = $"Vaša narudžba #{order.Id} je zaprimljena i čeka obradu.", Type = "order_status", CreatedAt = DateTime.UtcNow }
+            };
+            var staff = await db.Users.Where(x => x.IsEnabled && (x.IsAdmin || x.IsPharmacist)).ToListAsync(ct);
+            foreach (var member in staff)
+                notifications.Add(new NotificationEntity { UserId = member.Id, SenderId = customer.Id, Title = "Nova narudžba", Message = $"Kupac {customer.FirstName} {customer.LastName} poslao/la je narudžbu #{order.Id}.", Type = "order_status", CreatedAt = DateTime.UtcNow });
+            db.Notifications.AddRange(notifications);
+            await db.SaveChangesAsync(ct);
+            foreach (var notification in notifications)
+            {
+                try
+                {
+                    await notifier.SendNotificationAsync(notification.UserId,
+                        new NotificationDto(notification.Id, notification.Title, notification.Message, notification.CreatedAt, notification.IsRead, notification.Type, notification.SenderId), ct);
+                }
+                catch { /* The order and persisted notification are authoritative; realtime delivery can be retried on refresh. */ }
+            }
         }
-        return new(order.Id, order.OrderedAtUtc, order.Status, order.TotalPrice, order.PaymentMethod, order.ShippingAddress, $"{customer.FirstName} {customer.LastName}".Trim(), customer.Email, order.Items.Select(i => new OrderItemDto(i.ProductId, i.ProductName, i.Quantity, i.UnitPrice)).ToList());
+        catch { /* Notification persistence must not turn an already committed purchase into a checkout failure. */ }
+        return MapOrder(order, customer);
+    }
+
+    private static OrderDto MapOrder(OrderEntity order, MarketUserEntity? customer = null) => new(order.Id, order.OrderedAtUtc, order.Status, order.TotalPrice, order.PaymentMethod, order.ShippingAddress,
+        $"{(customer ?? order.User)?.FirstName} {(customer ?? order.User)?.LastName}".Trim(), (customer ?? order.User)?.Email ?? string.Empty,
+        order.Items.Select(i => new OrderItemDto(i.ProductId, i.ProductName, i.Quantity, i.UnitPrice)).ToList());
+}
+
+internal static class CommerceRules
+{
+    public static string CartFingerprint(CartEntity cart, IEnumerable<CartItemEntity> items)
+    {
+        var payload = $"{cart.Id}|" + string.Join(";", items.OrderBy(x => x.ProductId).Select(x => $"{x.Id}:{x.ProductId}:{x.Quantity}:{GetCartHandler.CurrentPrice(x.Product!):0.00}"));
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(payload)));
+    }
+
+    public static void EnsureProductNotExpired(ProductEntity? product)
+    {
+        if (product?.ExpiryDate is DateTime expiryDate && expiryDate.Date < DateTime.UtcNow.Date)
+            throw new MarketConflictException($"Proizvod {product.Name} je istekao. Uklonite ga iz korpe prije kupovine.");
     }
 }
 
@@ -184,8 +247,21 @@ public sealed class UpdateOrderStatusHandler(IAppDbContext db, IAppCurrentUser u
     {
         if (!user.IsAdmin && !user.IsPharmacist) throw new MarketConflictException("Samo administrator ili farmaceut može mijenjati narudžbe.");
         if (!new[] { "Pending", "Processing", "Shipped", "Completed", "Cancelled" }.Contains(request.Status)) throw new MarketConflictException("Status narudžbe nije ispravan.");
-        var order = await db.Orders.FirstOrDefaultAsync(o => o.Id == request.Id, ct) ?? throw new MarketNotFoundException("Narudžba nije pronađena.");
+        var order = await db.Orders.Include(o => o.Items).ThenInclude(i => i.Product).FirstOrDefaultAsync(o => o.Id == request.Id, ct) ?? throw new MarketNotFoundException("Narudžba nije pronađena.");
         if (order.IsSupplyOrder) throw new MarketConflictException("Narudžbu zaliha ažurirajte kroz pregled nabavke.");
+        if (order.Status == request.Status) return;
+        var allowedNextStatuses = order.Status switch
+        {
+            "Pending" => new[] { "Processing", "Cancelled" },
+            "Processing" => new[] { "Shipped", "Cancelled" },
+            "Shipped" => new[] { "Completed" },
+            _ => Array.Empty<string>()
+        };
+        if (!allowedNextStatuses.Contains(request.Status))
+            throw new MarketConflictException($"Nije dozvoljen prelaz narudžbe iz statusa {order.Status} u {request.Status}.");
+        if (request.Status == "Cancelled")
+            foreach (var item in order.Items)
+                if (item.Product is not null) item.Product.QuantityInStock += item.Quantity;
         order.Status = request.Status;
         var notification = new NotificationEntity
         {
@@ -196,8 +272,12 @@ public sealed class UpdateOrderStatusHandler(IAppDbContext db, IAppCurrentUser u
         };
         db.Notifications.Add(notification);
         await db.SaveChangesAsync(ct);
-        await notifier.SendNotificationAsync(notification.UserId,
-            new NotificationDto(notification.Id, notification.Title, notification.Message, notification.CreatedAt, notification.IsRead, notification.Type, notification.SenderId), ct);
+        try
+        {
+            await notifier.SendNotificationAsync(notification.UserId,
+                new NotificationDto(notification.Id, notification.Title, notification.Message, notification.CreatedAt, notification.IsRead, notification.Type, notification.SenderId), ct);
+        }
+        catch { /* The saved status and notification remain authoritative if realtime delivery is unavailable. */ }
     }
 }
 

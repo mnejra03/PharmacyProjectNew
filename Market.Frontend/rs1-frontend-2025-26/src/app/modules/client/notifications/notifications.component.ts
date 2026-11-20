@@ -3,6 +3,8 @@ import { Subscription } from 'rxjs';
 import { NotificationsApiService, NotificationItem } from '../../../api-services/notifications/notifications-api.service';
 import { ChatRealtimeService } from '../../../core/services/chat-realtime.service';
 import { ToasterService } from '../../../core/services/toaster.service';
+import { DialogButton } from '../../shared/models/dialog-config.model';
+import { DialogHelperService } from '../../shared/services/dialog-helper.service';
 
 @Component({
   selector: 'app-notifications',
@@ -14,6 +16,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   private readonly api = inject(NotificationsApiService);
   private readonly realtime = inject(ChatRealtimeService);
   private readonly toaster = inject(ToasterService);
+  private readonly dialogs = inject(DialogHelperService);
   items: NotificationItem[] = [];
   private sub?: Subscription;
 
@@ -35,6 +38,6 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void { this.sub?.unsubscribe(); }
   load(): void { this.api.getAll().subscribe({ next: items => this.items = items, error: () => this.toaster.error('Obavijesti nije moguće učitati.') }); }
   markRead(item: NotificationItem): void { this.api.markRead(item.id).subscribe({ next: () => { item.isRead = true; this.updateUnreadCount(); this.toaster.success('Obavijest je označena kao pročitana.'); }, error: () => this.toaster.error('Obavijest nije moguće ažurirati.') }); }
-  remove(item: NotificationItem): void { this.api.delete(item.id).subscribe({ next: () => { this.items = this.items.filter(existing => existing.id !== item.id); this.updateUnreadCount(); this.toaster.success('Obavijest je obrisana.'); }, error: () => this.toaster.error('Obavijest nije moguće obrisati.') }); }
+  remove(item: NotificationItem): void { this.dialogs.confirmDelete(item.title, 'DIALOGS.MESSAGES.DELETE_CONFIRM').subscribe(result => { if (result?.button !== DialogButton.DELETE) return; this.api.delete(item.id).subscribe({ next: () => { this.items = this.items.filter(existing => existing.id !== item.id); this.updateUnreadCount(); this.toaster.success('Obavijest je obrisana.'); }, error: () => this.toaster.error('Obavijest nije moguće obrisati.') }); }); }
   private updateUnreadCount(): void { this.api.setUnreadCount(this.items.filter(item => !item.isRead).length); }
 }

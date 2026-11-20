@@ -39,6 +39,7 @@ public sealed class OrderEntityConfiguration : IEntityTypeConfiguration<OrderEnt
         b.Property(x => x.ShippingAddress).HasMaxLength(1000).IsRequired();
         b.Property(x => x.TotalPrice).HasPrecision(18, 2);
         b.Property(x => x.IsSupplyOrder).HasDefaultValue(false);
+        b.HasIndex(x => x.PaymentReference).IsUnique().HasFilter("[PaymentReference] IS NOT NULL");
         b.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
     }
 }
@@ -53,6 +54,23 @@ public sealed class OrderItemEntityConfiguration : IEntityTypeConfiguration<Orde
         b.Property(x => x.UnitPrice).HasPrecision(18, 2);
         b.HasOne(x => x.Order).WithMany(x => x.Items).HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.Cascade);
         b.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+public sealed class PaymentIntentReservationEntityConfiguration : IEntityTypeConfiguration<PaymentIntentReservationEntity>
+{
+    public void Configure(EntityTypeBuilder<PaymentIntentReservationEntity> b)
+    {
+        b.ToTable("PaymentIntentReservations");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.PaymentIntentId).HasMaxLength(200).IsRequired();
+        b.Property(x => x.CartFingerprint).HasMaxLength(128).IsRequired();
+        b.Property(x => x.Currency).HasMaxLength(10).IsRequired();
+        b.HasIndex(x => x.PaymentIntentId).IsUnique();
+        b.HasIndex(x => x.OrderId).IsUnique().HasFilter("[OrderId] IS NOT NULL");
+        b.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne(x => x.Cart).WithMany().HasForeignKey(x => x.CartId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne(x => x.Order).WithOne().HasForeignKey<PaymentIntentReservationEntity>(x => x.OrderId).OnDelete(DeleteBehavior.Restrict);
     }
 }
 
