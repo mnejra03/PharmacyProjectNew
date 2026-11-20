@@ -147,6 +147,19 @@ export class DialogHelperService {
     });
   }
 
+  confirmLogout(): Observable<DialogResult | undefined> {
+    return this.open({
+      type: DialogType.QUESTION,
+      title: 'Odjaviti se?',
+      message: 'Da li sigurno želite završiti ovu prijavu?',
+      icon: 'logout',
+      buttons: [
+        { type: DialogButton.CANCEL, label: 'Ostani prijavljen' },
+        { type: DialogButton.YES, label: 'Odjavi se', color: 'warn' }
+      ]
+    });
+  }
+
   /**
    * Shows unsaved changes confirmation
    */

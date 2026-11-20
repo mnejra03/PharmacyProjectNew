@@ -1,13 +1,13 @@
 import { Component, inject } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
 import { AuthFacadeService } from '../../../core/services/auth/auth-facade.service';
+import { PostLoginNavigationService } from '../../../core/services/auth/post-login-navigation.service';
 
 @Component({ selector: 'app-register', standalone: false, templateUrl: './register.component.html', styleUrl: './register.component.scss' })
 export class RegisterComponent {
   private fb = inject(FormBuilder);
   private auth = inject(AuthFacadeService);
-  private router = inject(Router);
+  private postLoginNavigation = inject(PostLoginNavigationService);
   submitting = false;
   errorMessage = '';
   form = this.fb.group({
@@ -30,7 +30,7 @@ export class RegisterComponent {
       email: this.form.value.email ?? '', phoneNumber: this.form.value.phoneNumber,
       password: this.form.value.password ?? ''
     }).subscribe({
-      next: () => { this.submitting = false; this.router.navigate(['/client']); },
+      next: () => { this.submitting = false; void this.postLoginNavigation.navigateAfterLogin('/client/profile'); },
       error: (error: any) => {
         this.submitting = false;
         const apiMessage = error?.error?.message ?? error?.error?.Message;

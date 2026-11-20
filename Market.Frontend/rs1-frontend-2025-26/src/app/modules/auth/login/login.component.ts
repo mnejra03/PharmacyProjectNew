@@ -5,6 +5,7 @@ import { BaseComponent } from '../../../core/components/base-classes/base-compon
 import { AuthFacadeService } from '../../../core/services/auth/auth-facade.service';
 import { LoginCommand } from '../../../api-services/auth/auth-api.model';
 import { CurrentUserService } from '../../../core/services/auth/current-user.service';
+import { PostLoginNavigationService } from '../../../core/services/auth/post-login-navigation.service';
 
 @Component({
   selector: 'app-login',
@@ -17,6 +18,7 @@ export class LoginComponent extends BaseComponent {
   private auth = inject(AuthFacadeService);
   private router = inject(Router);
   private currentUser = inject(CurrentUserService);
+  private postLoginNavigation = inject(PostLoginNavigationService);
   hidePassword = true;
 
   form = this.fb.group({
@@ -40,7 +42,7 @@ export class LoginComponent extends BaseComponent {
       next: () => {
         this.stopLoading();
         const target = this.currentUser.getDefaultRoute();
-        this.router.navigate([target]);
+        void this.postLoginNavigation.navigateAfterLogin(target);
       },
       error: (err) => {
         this.stopLoading('Invalid credentials. Please try again.');

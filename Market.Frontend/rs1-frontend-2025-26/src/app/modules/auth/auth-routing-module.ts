@@ -6,17 +6,19 @@ import {ForgotPasswordComponent} from './forgot-password/forgot-password.compone
 import {RegisterComponent} from './register/register.component';
 import {LogoutComponent} from './logout/logout.component';
 import {ResetPasswordComponent} from './reset-password/reset-password.component';
+import { guestOnlyGuard } from '../../core/guards/guest-only.guard';
+import { confirmLogoutGuard } from '../../core/guards/confirm-logout.guard';
 
 const routes: Routes = [
   {
     path: '',
     component: AuthLayoutComponent,
     children: [
-      { path: 'login', component: LoginComponent },
-       { path: 'register', component: RegisterComponent },
+      { path: 'login', component: LoginComponent, canActivate: [guestOnlyGuard] },
+       { path: 'register', component: RegisterComponent, canActivate: [guestOnlyGuard] },
        { path: 'forgot-password', component: ForgotPasswordComponent },
        { path: 'reset-password', component: ResetPasswordComponent },
-      { path: 'logout', component: LogoutComponent },
+      { path: 'logout', component: LogoutComponent, canActivate: [confirmLogoutGuard] },
       { path: '', redirectTo: 'login', pathMatch: 'full' }
     ]
   }
