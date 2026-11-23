@@ -51,8 +51,10 @@ export class AuthFacadeService {
   isCustomer = computed(() => this._currentUser()?.isCustomer ?? false);
 
   constructor() {
-    // initialize state from the existing access token
-    this.initializeFromToken();
+    // A fresh application start must always begin signed out. Login stores
+    // credentials for the current run; stale browser tokens are discarded.
+    this.storage.clear();
+    this.store.setCartCount(0);
   }
 
   // =========================================================
@@ -140,16 +142,6 @@ export class AuthFacadeService {
   // =========================================================
   // PRIVATE HELPERS
   // =========================================================
-
-  /**
-   * On application startup, restore state from the existing token.
-   */
-  private initializeFromToken(): void {
-    const token = this.storage.getAccessToken();
-    if (token) {
-      this.decodeAndSetUser(token);
-    }
-  }
 
   /**
    * Decode the JWT and set the current user state.
