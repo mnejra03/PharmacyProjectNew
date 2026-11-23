@@ -8,10 +8,14 @@ import { DashboardApiService, DashboardStats } from '../../../api-services/dashb
     <h1 id="dashboard-title">Pregled apoteke</h1>
     <div class="dashboard-cards" *ngIf="stats">
       <article class="card"><h2>Korisnici</h2><p>{{ stats.users }}</p></article>
+      <article class="card"><h2>Kupci</h2><p>{{ stats.customers }}</p></article>
       <article class="card"><h2>Farmaceuti</h2><p>{{ stats.pharmacists }}</p></article>
+      <article class="card"><h2>Administratori</h2><p>{{ stats.administrators }}</p></article>
       <article class="card"><h2>Recepti</h2><p>{{ stats.recipes }}</p></article>
       <article class="card"><h2>Recepti na čekanju</h2><p>{{ stats.pendingRecipes }}</p></article>
-      <article class="card"><h2>Nepročitane obavijesti</h2><p>{{ stats.unreadNotifications }}</p></article>
+      <article class="card"><h2>Obavijesti ukupno</h2><p>{{ stats.notifications }}</p></article>
+      <article class="card"><h2>Nepročitane za admina</h2><p>{{ stats.unreadNotifications }}</p><small>Od svih obavijesti sistema.</small></article>
+      <article class="card"><h2>Nepročitane kod farmaceuta</h2><p>{{ stats.pharmacistUnreadNotifications }}</p><small>Ukupno za sve farmaceute.</small></article>
     </div>
   </section>`,
   styles: [`
@@ -22,6 +26,7 @@ import { DashboardApiService, DashboardStats } from '../../../api-services/dashb
     .card { min-height:125px; padding:1.5rem; border-radius:10px; background:#fff; box-shadow:0 2px 10px rgba(0,0,0,.08); text-align:center; }
     .card h2 { margin:0 0 .75rem; color:#59605a; font-size:1rem; font-weight:600; }
     .card p { margin:0; color:#1b5e20; font-size:2rem; font-weight:700; }
+    .card small { display:block; margin-top:.6rem; color:#65756f; line-height:1.4; }
     @media(max-width:600px){.dashboard-page{padding:1rem}.dashboard-cards{grid-template-columns:1fr;gap:.875rem}}
   `],
 })
