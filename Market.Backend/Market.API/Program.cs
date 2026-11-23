@@ -120,6 +120,7 @@ public partial class Program
         {
             // Any startup failure will be logged here
             Log.Fatal(ex, "Market API terminated unexpectedly.");
+            Environment.ExitCode = 1;
         }
         finally
         {
