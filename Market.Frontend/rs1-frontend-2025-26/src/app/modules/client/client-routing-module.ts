@@ -3,8 +3,7 @@ import { NotificationsComponent } from './notifications/notifications.component'
 import { ClientLayoutComponent } from './client-layout/client-layout.component';
 import { CartComponent } from './cart/cart.component'; import { WishlistComponent } from './wishlist/wishlist.component'; import { OrdersComponent } from './orders/orders.component';
 import { SupplyOrdersComponent } from './orders/supply-orders.component';
-import { confirmPanelBackGuard } from '../../core/guards/confirm-panel-back.guard';
-const routes: Routes = [{ path:'', component:ClientLayoutComponent, canDeactivate:[confirmPanelBackGuard], children:[
+const routes: Routes = [{ path:'', component:ClientLayoutComponent, children:[
   { path: 'notifications', component: NotificationsComponent }, { path: 'recipes', component: RecipesComponent },
   { path: 'cart', component: CartComponent }, { path: 'wishlist', component: WishlistComponent }, { path: 'orders', component: OrdersComponent },
   { path: 'supply-orders', component: SupplyOrdersComponent },

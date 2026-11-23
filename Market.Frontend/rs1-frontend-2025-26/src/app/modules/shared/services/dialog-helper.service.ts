@@ -1,7 +1,7 @@
 // src/app/modules/shared/services/dialog-helper.service.ts
 
 import { Injectable } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { Observable } from 'rxjs';
 import { DialogConfig, DialogType, DialogButton, DialogResult } from '../models/dialog-config.model';
 import {FitConfirmDialogComponent} from '../components/fit-confirm-dialog/fit-confirm-dialog.component';
@@ -10,6 +10,8 @@ import {FitConfirmDialogComponent} from '../components/fit-confirm-dialog/fit-co
   providedIn: 'root'
 })
 export class DialogHelperService {
+  private browserBackLogoutDialog?: MatDialogRef<FitConfirmDialogComponent, DialogResult | undefined>;
+
   constructor(private dialog: MatDialog) {}
 
   /**
@@ -158,6 +160,38 @@ export class DialogHelperService {
         { type: DialogButton.YES, label: 'Odjavi se', color: 'warn' }
       ]
     });
+  }
+
+  confirmLogoutFromBrowserBack(): Observable<DialogResult | undefined> {
+    const dialogRef = this.dialog.open(FitConfirmDialogComponent, {
+      width: '450px',
+      disableClose: false,
+      closeOnNavigation: false,
+      data: this.logoutDialogConfig(),
+      panelClass: 'custom-dialog-container'
+    });
+    this.browserBackLogoutDialog = dialogRef;
+    dialogRef.afterClosed().subscribe(() => {
+      if (this.browserBackLogoutDialog === dialogRef) this.browserBackLogoutDialog = undefined;
+    });
+    return dialogRef.afterClosed();
+  }
+
+  dismissLogoutFromBrowserBack(): void {
+    this.browserBackLogoutDialog?.close({ button: DialogButton.CANCEL });
+  }
+
+  private logoutDialogConfig(): DialogConfig {
+    return {
+      type: DialogType.QUESTION,
+      title: 'Odjaviti se?',
+      message: 'Da li sigurno želite završiti ovu prijavu?',
+      icon: 'logout',
+      buttons: [
+        { type: DialogButton.CANCEL, label: 'Ostani prijavljen' },
+        { type: DialogButton.YES, label: 'Odjavi se', color: 'warn' }
+      ]
+    };
   }
 
   /**

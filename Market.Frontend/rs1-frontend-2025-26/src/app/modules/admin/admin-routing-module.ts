@@ -8,10 +8,9 @@ import { AdvertisementsComponent } from './advertisements/advertisements.compone
 import { AdminProductsComponent } from './products/products.component';
 import { AdminOrdersComponent } from './orders/admin-orders.component';
 import { AdminNotificationsComponent } from './notifications/admin-notifications.component';
-import { confirmPanelBackGuard } from '../../core/guards/confirm-panel-back.guard';
 
 const routes: Routes = [{
-  path: '', component: AdminLayoutComponent, canDeactivate: [confirmPanelBackGuard], children: [
+  path: '', component: AdminLayoutComponent, children: [
     { path: 'settings', component: AdminSettingsComponent },
     { path: 'overview', component: DashboardComponent },
     { path: 'advertisements', component: AdvertisementsComponent },
