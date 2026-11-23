@@ -26,7 +26,7 @@ import { ToasterService } from '../../../core/services/toaster.service';
       <p *ngIf="!loading && !orders.length">Još nema zahtjeva za nabavku.</p>
       <mat-card *ngFor="let order of orders" class="supply-card">
         <mat-card-header><mat-card-title>Zahtjev #{{order.id}}</mat-card-title>
-          <mat-card-subtitle>{{order.orderedAtUtc | date:'medium'}} · <span class="status-pill" [ngClass]="'status-'+order.status.toLowerCase()">{{statusLabel(order.status)}}</span></mat-card-subtitle>
+          <mat-card-subtitle>{{order.orderedAtUtc | regionalDate}} · <span class="status-pill" [ngClass]="'status-'+order.status.toLowerCase()">{{statusLabel(order.status)}}</span></mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
           <p *ngFor="let item of order.items">{{item.name}} × {{item.quantity}} — {{item.unitPrice * item.quantity | number:'1.2-2'}} KM</p>

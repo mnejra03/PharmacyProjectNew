@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, Validators } from '@angular/forms';
 import { StoreApiService, Product, ProductReview } from '../../../api-services/store/store-api.service';
@@ -16,7 +16,7 @@ import { ToasterService } from '../../../core/services/toaster.service';
       <div class="detail-actions"><button mat-raised-button color="primary" (click)="addToCart()" [disabled]="p.quantityInStock<1">Dodaj u korpu</button><button mat-stroked-button (click)="favorite()">♡ Dodaj u favorite</button></div>
     </div></div>
   <section class="reviews"><h2>Ocjene i recenzije</h2><p *ngIf="!reviews.length">Još nema recenzija.</p>
-    <article class="review" *ngFor="let r of reviews"><div class="review-heading"><strong>{{r.userName}}</strong><span>{{'★'.repeat(r.rating)}} <small>{{r.createdAtUtc | date:'mediumDate'}}</small></span></div><p>{{r.text}}</p></article>
+    <article class="review" *ngFor="let r of reviews"><div class="review-heading"><strong>{{r.userName}}</strong><span>{{'★'.repeat(r.rating)}} <small>{{r.createdAtUtc | regionalDate:'date'}}</small></span></div><p>{{r.text}}</p></article>
     <p class="review-policy" *ngIf="auth.isAuthenticated()">Dozvoljena je jedna recenzija po proizvodu.</p><form *ngIf="auth.isAuthenticated()" [formGroup]="reviewForm" (ngSubmit)="submitReview()"><mat-form-field appearance="outline"><mat-label>Ocjena</mat-label><mat-select formControlName="rating"><mat-option *ngFor="let n of [5,4,3,2,1]" [value]="n">{{n}} zvjezdica</mat-option></mat-select></mat-form-field><mat-form-field appearance="outline"><mat-label>Vaša recenzija</mat-label><textarea matInput rows="3" formControlName="text"></textarea></mat-form-field><button mat-raised-button color="primary" [disabled]="reviewForm.invalid">Pošalji recenziju</button></form>
   </section>
   <div class="image-zoom-backdrop" *ngIf="imageZoomOpen && product as p" (click)="closeImageZoom()" role="dialog" aria-modal="true" [attr.aria-label]="p.name + ' - uvećani prikaz slike'">

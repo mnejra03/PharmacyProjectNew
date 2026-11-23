@@ -1,6 +1,8 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { AdminNotificationItem, NotificationsApiService } from '../../../api-services/notifications/notifications-api.service';
 import { ToasterService } from '../../../core/services/toaster.service';
+import { DialogButton } from '../../shared/models/dialog-config.model';
+import { DialogHelperService } from '../../shared/services/dialog-helper.service';
 
 @Component({
   selector: 'app-admin-notifications',
@@ -12,10 +14,10 @@ import { ToasterService } from '../../../core/services/toaster.service';
       <mat-card *ngFor="let item of items" class="notification-card" [class.unread]="!item.isRead">
         <mat-card-header>
           <mat-card-title>{{item.title}} <span *ngIf="!item.isRead" class="new-label">Nepročitano za vas</span></mat-card-title>
-          <mat-card-subtitle>{{item.createdAt | date:'short'}}</mat-card-subtitle>
+          <mat-card-subtitle>{{item.createdAt | regionalDate:'date-time'}}</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content><div class="notification-parties"><span><strong>Od:</strong> {{item.senderName || 'Sistem'}}<small *ngIf="item.senderEmail">{{item.senderEmail}}</small></span><span><strong>Za:</strong> {{item.recipientName}}<small>{{item.recipientEmail}}</small></span><span><strong>Status kod primaoca:</strong> {{item.recipientIsRead ? 'Pročitano' : 'Nepročitano'}}</span><span><strong>Vaš admin status:</strong> {{item.isRead ? 'Pročitano' : 'Nepročitano'}}</span></div><p class="message">{{displayMessage(item)}}</p></mat-card-content>
-        <mat-card-actions><button mat-button (click)="setReadState(item,!item.isRead)">{{item.isRead?'Označi kao nepročitano za mene':'Označi kao pročitano za mene'}}</button></mat-card-actions>
+        <mat-card-actions><button mat-button (click)="setReadState(item,!item.isRead)">{{item.isRead?'Označi kao nepročitano za mene':'Označi kao pročitano za mene'}}</button><button mat-button color="warn" (click)="dismiss(item)">Ukloni iz mog pregleda</button></mat-card-actions>
       </mat-card>
     </section>
   `,
@@ -30,6 +32,7 @@ import { ToasterService } from '../../../core/services/toaster.service';
 export class AdminNotificationsComponent implements OnInit {
   private readonly api = inject(NotificationsApiService);
   private readonly toaster = inject(ToasterService);
+  private readonly dialogs = inject(DialogHelperService);
   items: AdminNotificationItem[] = [];
 
   ngOnInit(): void { this.load(); }
@@ -51,6 +54,20 @@ export class AdminNotificationsComponent implements OnInit {
         this.toaster.success(isRead ? 'Označeno kao pročitano za vaš admin pregled.' : 'Označeno kao nepročitano za vaš admin pregled.');
       },
       error: () => this.toaster.error('Status obavijesti nije moguće promijeniti.')
+    });
+  }
+
+  dismiss(item: AdminNotificationItem): void {
+    this.dialogs.confirmDelete(item.title, 'DIALOGS.MESSAGES.DELETE_CONFIRM').subscribe(result => {
+      if (result?.button !== DialogButton.DELETE) return;
+      this.api.dismissForAdmin(item.id).subscribe({
+        next: () => {
+          this.items = this.items.filter(existing => existing.id !== item.id);
+          this.api.setUnreadCount(this.items.filter(notification => !notification.isRead).length);
+          this.toaster.success('Obavijest je uklonjena samo iz vašeg admin pregleda.');
+        },
+        error: () => this.toaster.error('Obavijest nije moguće ukloniti iz admin pregleda.')
+      });
     });
   }
 }

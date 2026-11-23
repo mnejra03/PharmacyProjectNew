@@ -7,7 +7,7 @@ import { AuthFacadeService } from '../../../core/services/auth/auth-facade.servi
 
 @Component({selector:'app-chat',standalone:false,template:`<section class="page"><h1>Razgovor s farmaceutom</h1>
   <mat-form-field *ngIf="contacts.length"><mat-label>{{auth.isPharmacist()?'Korisnik':'Farmaceut'}}</mat-label><mat-select [value]="selectedId" (selectionChange)="selectContact($event.value)"><mat-option *ngFor="let c of contacts" [value]="c.id">{{c.firstName}} {{c.lastName}} · {{c.email}}</mat-option></mat-select></mat-form-field>
-  <p *ngIf="!contacts.length">Nema dostupnog kontakta za razgovor.</p><mat-list><mat-list-item *ngFor="let item of messages"><b>{{item.isResponse?'Farmaceut':'Korisnik'}}:</b>&nbsp;{{item.message}} <small>{{item.sentAtUtc | date:'short'}}</small></mat-list-item></mat-list>
+  <p *ngIf="!contacts.length">Nema dostupnog kontakta za razgovor.</p><mat-list><mat-list-item *ngFor="let item of messages"><b>{{item.isResponse?'Farmaceut':'Korisnik'}}:</b>&nbsp;{{item.message}} <small>{{item.sentAtUtc | regionalDate:'date-time'}}</small></mat-list-item></mat-list>
   <form [formGroup]="form" (ngSubmit)="send()"><mat-form-field><mat-label>Poruka</mat-label><textarea matInput formControlName="message" rows="3"></textarea></mat-form-field><button mat-raised-button color="primary" [disabled]="form.invalid || !selectedId">Pošalji</button></form>
 </section>`})
 export class ChatComponent implements OnInit, OnDestroy {

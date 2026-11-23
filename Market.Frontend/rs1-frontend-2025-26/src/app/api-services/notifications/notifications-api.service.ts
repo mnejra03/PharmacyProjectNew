@@ -8,6 +8,7 @@ export interface AdminNotificationItem extends NotificationItem { recipientIsRea
   getAll(){return this.http.get<NotificationItem[]>(this.url).pipe(tap(items=>this.setUnreadCount(items.filter(item=>!item.isRead).length)));}
   getAllForAdmin(){return this.http.get<AdminNotificationItem[]>(`${this.url}/admin`);}
   setAdminReadState(id:number,isRead:boolean){return this.http.put<void>(`${this.url}/admin/${id}/read-state`,{isRead});}
+  dismissForAdmin(id:number){return this.http.delete<void>(`${this.url}/admin/${id}`);}
   setUnreadCount(count:number){this.unreadCountSubject.next(count);}
   markRead(id:number){return this.http.put<void>(`${this.url}/${id}/read`,{});}
   delete(id:number){return this.http.delete<void>(`${this.url}/${id}`);}

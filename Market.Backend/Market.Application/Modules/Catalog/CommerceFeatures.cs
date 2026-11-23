@@ -62,8 +62,56 @@ public sealed class AddCartItemHandler(IAppDbContext db, IAppCurrentUser user) :
         var item = cart.Items.FirstOrDefault(i => i.ProductId == product.Id);
         var targetQuantity = (item?.Quantity ?? 0) + request.Quantity;
         if (targetQuantity > product.QuantityInStock) throw new MarketConflictException("Nema dovoljno proizvoda na stanju.");
-        if (item is null) db.CartItems.Add(new CartItemEntity { CartId = cart.Id, ProductId = product.Id, Quantity = request.Quantity }); else item.Quantity = targetQuantity;
-        await db.SaveChangesAsync(ct);
+        if (item is null)
+        {
+            // Cart items are soft-deleted. The normal cart query hides them,
+            // but the unique index still reserves (CartId, ProductId).
+            // Restore a previous row before trying to insert a new one.
+            var previouslyDeletedItem = await db.CartItems.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(i => i.CartId == cart.Id && i.ProductId == product.Id, ct);
+            if (previouslyDeletedItem is not null)
+            {
+                var restoredQuantity = request.Quantity;
+                if (restoredQuantity > product.QuantityInStock)
+                    throw new MarketConflictException("Nema dovoljno proizvoda na stanju.");
+
+                previouslyDeletedItem.IsDeleted = false;
+                previouslyDeletedItem.Quantity = restoredQuantity;
+                await db.SaveChangesAsync(ct);
+            }
+            else
+            {
+                var newItem = new CartItemEntity { CartId = cart.Id, ProductId = product.Id, Quantity = request.Quantity };
+                db.CartItems.Add(newItem);
+                try
+                {
+                    await db.SaveChangesAsync(ct);
+                }
+                catch (DbUpdateException)
+                {
+                    // A concurrent add can insert after the check above. Look
+                    // past the soft-delete filter and restore/update that row.
+                    db.CartItems.Entry(newItem).State = EntityState.Detached;
+                    var concurrentItem = await db.CartItems.IgnoreQueryFilters().FirstOrDefaultAsync(
+                        i => i.CartId == cart.Id && i.ProductId == product.Id, ct);
+                    if (concurrentItem is null) throw;
+
+                    var concurrentTargetQuantity = concurrentItem.Quantity + request.Quantity;
+                    if (concurrentItem.IsDeleted) concurrentTargetQuantity = request.Quantity;
+                    if (concurrentTargetQuantity > product.QuantityInStock)
+                        throw new MarketConflictException("Nema dovoljno proizvoda na stanju.");
+
+                    concurrentItem.IsDeleted = false;
+                    concurrentItem.Quantity = concurrentTargetQuantity;
+                    await db.SaveChangesAsync(ct);
+                }
+            }
+        }
+        else
+        {
+            item.Quantity = targetQuantity;
+            await db.SaveChangesAsync(ct);
+        }
         cart = await GetCartHandler.GetActiveCart(db, user, ct);
         return GetCartHandler.Map(cart);
     }

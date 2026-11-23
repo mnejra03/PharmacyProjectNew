@@ -66,6 +66,6 @@ export class CatalogComponent implements OnInit {
   fetch(){const [sortBy,direction]=this.sortOption.split('-');this.api.getProducts({search:this.search||undefined,categoryId:this.categoryId,brandId:this.brandId,discounted:this.discounted||undefined,page:this.page,pageSize:12,sortBy,sortDescending:direction==='desc'}).subscribe(x=>{this.products=x.items;this.total=x.totalItems;this.totalPages=Math.max(1,x.totalPages);});}
   changePage(delta:number){this.page+=delta;this.fetch();window.scrollTo({top:0,behavior:'smooth'});}
   imageFallback(event:Event){(event.target as HTMLImageElement).src='/images/product-placeholder.svg';}
-  add(p:Product){if(!this.auth.isAuthenticated()){this.toaster.error('Prijavite se da biste dodali proizvod u korpu.');return;}this.api.addToCart(p.id).subscribe({next:()=>this.toaster.success('Proizvod je dodan u korpu.'),error:()=>this.toaster.error('Proizvod nije moguće dodati u korpu.')});}
+  add(p:Product){if(!this.auth.isAuthenticated()){this.toaster.error('Prijavite se da biste dodali proizvod u korpu.');return;}this.api.addToCart(p.id).subscribe({next:()=>this.toaster.success('Proizvod je dodan u korpu.'),error:(error:any)=>this.toaster.error(error?.error?.detail??error?.error?.message??'Proizvod nije moguće dodati u korpu.')});}
   favorite(p:Product){if(!this.auth.isAuthenticated()){this.toaster.error('Prijavite se da biste sačuvali favorite.');return;}this.api.addToWishlist(p.id).subscribe({next:()=>this.toaster.success('Dodano u favorite.'),error:()=>this.toaster.error('Proizvod nije moguće dodati u favorite.')});}
 }

@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { RecipesApiService, Recipe } from '../../../api-services/recipes/recipes-api.service';
 import { ToasterService } from '../../../core/services/toaster.service';
 
@@ -31,7 +31,7 @@ import { ToasterService } from '../../../core/services/toaster.service';
         </div>
         <div class="details-grid">
           <div><span class="label">LJEKAR NA RECEPTU</span><strong>Dr. {{item.doctorFirstName}} {{item.doctorLastName}}</strong></div>
-          <div><span class="label">DATUM PRIJEMA</span><strong>{{item.dateOfIssue | date:'d. M. y. - HH:mm'}}</strong></div>
+          <div><span class="label">DATUM PRIJEMA</span><strong>{{item.dateOfIssue | regionalDate:'date-time'}}</strong></div>
           <div><span class="label">BROJ RECEPTA</span><strong>#{{item.id}}</strong></div>
         </div>
         <footer class="card-actions">

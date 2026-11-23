@@ -50,6 +50,11 @@
 
     <!-- NAVIGATION MENU -->
     <mat-nav-list>
+      <a mat-list-item routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">
+        <mat-icon matListItemIcon>home</mat-icon>
+        <span matListItemTitle>Početna apoteke</span>
+      </a>
+
       <!-- SYSTEM SECTION -->
       <div class="nav-section-title">
         {{ 'ADMIN_PANEL.MENU.SYSTEM' | translate }}

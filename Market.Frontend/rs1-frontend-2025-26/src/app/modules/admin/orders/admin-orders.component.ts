@@ -14,7 +14,7 @@ import { ToasterService } from '../../../core/services/toaster.service';
         <mat-icon>receipt_long</mat-icon><h2>Nema narudžbi</h2><p>Narudžbe će se pojaviti ovdje nakon što kupac završi checkout.</p>
       </div>
       <mat-card class="order-card" *ngFor="let order of orders">
-        <mat-card-header><mat-card-title>Narudžba #{{order.id}}</mat-card-title><mat-card-subtitle>{{formatSarajevoTime(order.orderedAtUtc)}}</mat-card-subtitle></mat-card-header>
+        <mat-card-header><mat-card-title>Narudžba #{{order.id}}</mat-card-title><mat-card-subtitle>{{order.orderedAtUtc | regionalDate}}</mat-card-subtitle></mat-card-header>
         <mat-card-content>
           <div class="order-meta"><span><b>Kupac:</b> {{order.customerName || 'Korisnik'}} · {{order.customerEmail}}</span><span><b>Adresa:</b> {{order.shippingAddress}}</span><span><b>Plaćanje:</b> {{order.paymentMethod}}</span></div>
           <div class="item-line" *ngFor="let item of order.items"><span>{{item.name}} × {{item.quantity}}</span><span>{{item.unitPrice * item.quantity | number:'1.2-2'}} KM</span></div>
@@ -24,7 +24,7 @@ import { ToasterService } from '../../../core/services/toaster.service';
       <header class="supply-header"><p class="eyebrow">Nabavka</p><h2>Zahtjevi za dopunu zaliha</h2><p>Odobrenjem zahtjeva tražena količina se dodaje na stanje proizvoda.</p></header>
       <div *ngIf="!supplyOrders.length" class="empty-state"><p>Nema zahtjeva za nabavku.</p></div>
       <mat-card class="order-card" *ngFor="let order of supplyOrders">
-        <mat-card-header><mat-card-title>Zahtjev #{{order.id}} · {{order.pharmacistName}}</mat-card-title><mat-card-subtitle>{{formatSarajevoTime(order.orderedAtUtc)}} · {{order.pharmacistEmail}}</mat-card-subtitle></mat-card-header>
+        <mat-card-header><mat-card-title>Zahtjev #{{order.id}} · {{order.pharmacistName}}</mat-card-title><mat-card-subtitle>{{order.orderedAtUtc | regionalDate}} · {{order.pharmacistEmail}}</mat-card-subtitle></mat-card-header>
         <mat-card-content>
           <div class="item-line" *ngFor="let item of order.items"><span>{{item.name}} × {{item.quantity}}</span><span>{{item.unitPrice * item.quantity | number:'1.2-2'}} KM</span></div>
           <div class="order-footer"><span class="status-pill" [ngClass]="'status-'+order.status.toLowerCase()">{{statusLabel(order.status)}}</span><strong>Ukupno: {{order.totalPrice | number:'1.2-2'}} KM</strong></div>
@@ -42,7 +42,7 @@ export class AdminOrdersComponent implements OnInit {
   private readonly toaster = inject(ToasterService);
   readonly statuses = ['Pending', 'Processing', 'Shipped', 'Completed', 'Cancelled'];
   statusLabel(status: string): string { return ({ Pending: 'Na čekanju', Processing: 'U obradi', Shipped: 'Poslano', Completed: 'Završeno', Cancelled: 'Otkazano' } as Record<string, string>)[status] ?? status; }
-  formatSarajevoTime(value: string): string { return new Intl.DateTimeFormat('bs-BA', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Sarajevo' }).format(new Date(value)); }
+  
   orders: PharmacyOrder[] = [];
   supplyOrders: PharmacySupplyOrder[] = [];
   loading = false;
