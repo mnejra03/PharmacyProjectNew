@@ -16,9 +16,9 @@ import { ToasterService } from '../../../core/services/toaster.service';
       <mat-card class="order-card" *ngFor="let order of orders">
         <mat-card-header><mat-card-title>Narudžba #{{order.id}}</mat-card-title><mat-card-subtitle>{{order.orderedAtUtc | regionalDate}}</mat-card-subtitle></mat-card-header>
         <mat-card-content>
-          <div class="order-meta"><span><b>Kupac:</b> {{order.customerName || 'Korisnik'}} · {{order.customerEmail}}</span><span><b>Adresa:</b> {{order.shippingAddress}}</span><span><b>Plaćanje:</b> {{order.paymentMethod}}</span></div>
+          <div class="order-meta"><span><b>Kupac:</b> {{order.customerName || 'Korisnik'}} · {{order.customerEmail}}</span><span><b>Adresa:</b> {{order.shippingAddress}}</span><span><b>Plaćanje:</b> {{paymentLabel(order.paymentMethod)}}</span></div>
           <div class="item-line" *ngFor="let item of order.items"><span>{{item.name}} × {{item.quantity}}</span><span>{{item.unitPrice * item.quantity | number:'1.2-2'}} KM</span></div>
-          <div class="order-footer"><span class="status-pill" [ngClass]="'status-'+order.status.toLowerCase()">{{statusLabel(order.status)}}</span><strong>Ukupno: {{order.totalPrice | number:'1.2-2'}} KM</strong><mat-form-field appearance="outline"><mat-label>Status</mat-label><mat-select [value]="order.status" (selectionChange)="updateStatus(order,$event.value)"><mat-option *ngFor="let status of statuses" [value]="status">{{statusLabel(status)}}</mat-option></mat-select></mat-form-field></div>
+          <div class="order-footer"><span class="status-pill" [ngClass]="'status-'+order.status.toLowerCase()">{{statusLabel(order.status)}}</span><strong>Ukupno: {{order.totalPrice | number:'1.2-2'}} KM</strong><mat-form-field appearance="outline"><mat-label>Status</mat-label><mat-select [value]="selectedStatus[order.id] ?? order.status" (selectionChange)="updateStatus(order,$event.value)"><mat-option *ngFor="let status of availableStatuses(order)" [value]="status">{{statusLabel(status)}}</mat-option></mat-select></mat-form-field></div>
         </mat-card-content>
       </mat-card>
       <header class="supply-header"><p class="eyebrow">Nabavka</p><h2>Zahtjevi za dopunu zaliha</h2><p>Odobrenjem zahtjeva tražena količina se dodaje na stanje proizvoda.</p></header>
@@ -40,8 +40,25 @@ import { ToasterService } from '../../../core/services/toaster.service';
 export class AdminOrdersComponent implements OnInit {
   private readonly api = inject(StoreApiService);
   private readonly toaster = inject(ToasterService);
-  readonly statuses = ['Pending', 'Processing', 'Shipped', 'Completed', 'Cancelled'];
+  readonly selectedStatus: Record<number, string> = {};
+  availableStatuses(order: PharmacyOrder): string[] {
+    return ({
+      Pending: ['Pending', 'Processing', 'Cancelled'],
+      Processing: ['Processing', 'Shipped', 'Cancelled'],
+      Shipped: ['Shipped', 'Completed'],
+      Completed: ['Completed'],
+      Cancelled: ['Cancelled']
+    } as Record<string, string[]>)[order.status] ?? [order.status];
+  }
   statusLabel(status: string): string { return ({ Pending: 'Na čekanju', Processing: 'U obradi', Shipped: 'Poslano', Completed: 'Završeno', Cancelled: 'Otkazano' } as Record<string, string>)[status] ?? status; }
+  paymentLabel(method: string): string {
+    const normalized = method.trim().toLocaleLowerCase();
+    if (normalized === 'card') return 'Kartica (Stripe test)';
+    if (normalized === 'cashondelivery' || normalized.startsWith('pouze')) return 'Pouzećem';
+    if (normalized.includes('kartica') && normalized.includes('demo')) return 'Kartica (demo narudžba)';
+    if (normalized === 'internal transfer') return 'Interni transfer (nabavka)';
+    return method;
+  }
   
   orders: PharmacyOrder[] = [];
   supplyOrders: PharmacySupplyOrder[] = [];
@@ -57,9 +74,11 @@ export class AdminOrdersComponent implements OnInit {
     });
   }
   updateStatus(order: PharmacyOrder, status: string): void {
+    const previousStatus = order.status;
+    this.selectedStatus[order.id] = status;
     this.api.updateOrderStatus(order.id, status).subscribe({
-      next: () => { order.status = status; this.toaster.success('Status narudžbe je izmijenjen.'); },
-      error: () => this.toaster.error('Status narudžbe nije moguće izmijeniti.')
+      next: () => { order.status = status; this.selectedStatus[order.id] = status; this.toaster.success('Status narudžbe je izmijenjen.'); },
+      error: () => { this.selectedStatus[order.id] = previousStatus; this.toaster.error('Status narudžbe nije moguće izmijeniti.'); }
     });
   }
 
